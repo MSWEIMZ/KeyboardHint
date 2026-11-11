@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "delayMs": 400,
+  "opacity": 0.92,
+  "excludedProcesses": []
+}
