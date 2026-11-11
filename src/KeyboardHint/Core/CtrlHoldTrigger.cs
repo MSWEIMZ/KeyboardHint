@@ -29,6 +29,8 @@ public sealed class CtrlHoldTrigger : IDisposable
 
     private readonly HashSet<int> _down = new(); // keys currently held (dedupes auto-repeat)
     private bool _pendingShow;
+    private long _eventsSeen;
+    private long _lastLoggedEvents;
 
     public bool Enabled { get; set; }
 
@@ -42,9 +44,20 @@ public sealed class CtrlHoldTrigger : IDisposable
         _holdTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(150, settings.DelayMs)) };
         _holdTimer.Tick += (_, _) => { _holdTimer.Stop(); TryShow(); };
 
-        // LL hooks can miss key-ups (focus steals etc.) — poll as a safety net.
+        // LL hooks can miss key-ups while the UI thread is busy — purge stale
+        // tracked keys against physical state and hide if Ctrl isn't really held.
         _watchdog = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
-        _watchdog.Tick += (_, _) => { if (IsShowing() && !AnyCtrlDown()) HideAll(); };
+        _watchdog.Tick += (_, _) =>
+        {
+            foreach (var vk in _down.ToList())
+                if (!Win32.KeyDown(vk)) _down.Remove(vk);
+            if (IsShowing() && !AnyCtrlDown()) HideAll();
+            if (_eventsSeen != _lastLoggedEvents)
+            {
+                _lastLoggedEvents = _eventsSeen;
+                Log.Info($"keys seen={_eventsSeen} down=[{string.Join(",", _down)}] pending={_pendingShow} showing={IsShowing()}");
+            }
+        };
     }
 
     public void Start() => _watchdog.Start();
@@ -53,6 +66,7 @@ public sealed class CtrlHoldTrigger : IDisposable
 
     public void OnKey(int vk, bool down)
     {
+        _eventsSeen++;
         if (!Enabled)
         {
             if (IsShowing()) HideAll();
@@ -62,17 +76,17 @@ public sealed class CtrlHoldTrigger : IDisposable
 
         if (CtrlKeys.Contains(vk))
         {
-            bool hadCtrl = CtrlHeldCount > 0;
             if (down) _down.Add(vk); else _down.Remove(vk);
-            bool hasCtrl = CtrlHeldCount > 0;
 
-            if (hasCtrl && !hadCtrl && !_pendingShow && !IsShowing())
+            if (down && !_pendingShow && !IsShowing())
             {
+                // Modifier keys never auto-repeat → safe to (re)start the timer
+                // on every Ctrl keydown. Self-heals a previously lost key-up.
                 _pendingShow = true;
                 _holdTimer.Stop();
                 _holdTimer.Start();
             }
-            else if (!hasCtrl)
+            else if (!down && CtrlHeldCount == 0)
             {
                 HideAll();
             }
@@ -104,16 +118,16 @@ public sealed class CtrlHoldTrigger : IDisposable
     private void TryShow()
     {
         _pendingShow = false;
-        if (!Enabled || CtrlHeldCount == 0 || !AnyCtrlDown()) return;
-        if (AnyOtherModifierDown()) return;
-        if (AnyMouseButtonDown()) return; // Ctrl+click / Ctrl+drag multi-select
+        if (!Enabled || CtrlHeldCount == 0 || !AnyCtrlDown()) { Log.Info("suppressed: no ctrl held"); return; }
+        if (AnyOtherModifierDown()) { Log.Info("suppressed: other modifier down"); return; }
+        if (AnyMouseButtonDown()) { Log.Info("suppressed: mouse button down"); return; }
 
         var ctx = ForegroundApp.Capture();
-        if (ctx.IsSuppressed(_settings.ExcludedProcesses)) return;
+        if (ctx.IsSuppressed(_settings.ExcludedProcesses)) { Log.Info($"suppressed: {ctx.ProcessName} excluded/fullscreen"); return; }
 
         var profile = _store.Resolve(ctx.ProcessName);
-        Log.Info($"show overlay: process={ctx.ProcessName} profile={profile.Id}");
-        _overlay.ShowFor(profile, ctx.WorkArea);
+        Log.Info($"show overlay: process={ctx.ProcessName} profile={profile.Id} dpi={ctx.DpiScale}");
+        _overlay.ShowFor(profile, ctx);
     }
 
     private void HideAll()

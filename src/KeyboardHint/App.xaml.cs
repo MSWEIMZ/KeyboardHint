@@ -32,6 +32,7 @@ public partial class App : System.Windows.Application
         var settings = AppSettings.Load();
         var store = ProfileStore.Load();
         _overlay = new OverlayWindow(settings);
+        _overlay.Prewarm();
         _trigger = new CtrlHoldTrigger(settings, store, _overlay);
         _hook = new KeyboardHook();
         _hook.KeyEvent += _trigger.OnKey;

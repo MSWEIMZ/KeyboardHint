@@ -7,7 +7,10 @@ namespace KeyboardHint.Core;
 public sealed class ForegroundContext
 {
     public required string ProcessName { get; init; }
+    /// <summary>Monitor work area in PHYSICAL pixels — divide by <see cref="DpiScale"/> for WPF DIPs.</summary>
     public required Win32.RECT WorkArea { get; init; }
+    /// <summary>DPI scale of the foreground window's monitor (1.5 = 150%).</summary>
+    public required double DpiScale { get; init; }
     public bool SuppressedByFullscreen { get; init; }
 
     public bool IsSuppressed(List<string> excluded)
@@ -32,10 +35,13 @@ public static class ForegroundApp
         catch (Exception ex) { Log.Error("get foreground process", ex); }
 
         var work = MonitorWorkArea(hwnd);
+        uint dpi = 96;
+        try { dpi = Win32.GetDpiForWindow(hwnd) & 0xFFFF; } catch { }
         return new ForegroundContext
         {
             ProcessName = name,
             WorkArea = work,
+            DpiScale = dpi > 0 ? dpi / 96.0 : 1.0,
             SuppressedByFullscreen = LooksFullscreen(hwnd)
         };
     }

@@ -124,6 +124,10 @@ public static class Win32
     [DllImport("user32.dll")]
     public static extern IntPtr GetShellWindow();
 
+    /// <summary>Win10 1607+. Returns packed DPI: LOWORD=X, HIWORD=Y (96 = 100%).</summary>
+    [DllImport("user32.dll")]
+    public static extern uint GetDpiForWindow(IntPtr hwnd);
+
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
     private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
 

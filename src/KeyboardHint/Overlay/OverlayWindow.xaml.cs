@@ -4,7 +4,6 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using KeyboardHint.Core;
-using KeyboardHint.Native;
 using KeyboardHint.Profiles;
 using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
@@ -100,8 +99,14 @@ public partial class OverlayWindow : Window
         }
     }
 
-    public void ShowFor(ShortcutProfile profile, Win32.RECT workArea)
+    public void ShowFor(ShortcutProfile profile, ForegroundContext ctx)
     {
+        // WorkArea is in physical pixels; WPF window coords are DIPs.
+        double s = Math.Max(0.5, ctx.DpiScale);
+        double waLeft = ctx.WorkArea.Left / s;
+        double waWidth = ctx.WorkArea.Width / s;
+        double waBottom = ctx.WorkArea.Bottom / s;
+
         var layer = profile.Layer("ctrl");
         foreach (var kv in _keys)
         {
@@ -130,23 +135,81 @@ public partial class OverlayWindow : Window
 
         Caption.Text = $"{profile.DisplayName} · Ctrl 快捷键";
 
-        // Measure, scale to fit monitor if needed, then position bottom-center.
+        // Show while RootBorder.Opacity is still 0 (invisible), then position
+        // AFTER the first real layout pass — UpdateLayout() does not produce a
+        // non-zero ActualSize synchronously for a just-shown window.
         KeyboardPanel.LayoutTransform = Transform.Identity;
-        Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-        var size = DesiredSize;
-        double scale = Math.Min(1.0, workArea.Width * 0.75 / size.Width);
+        Visibility = Visibility.Visible;
+        IsShowing = true;
+        _posTries = 0;
+        Dispatcher.BeginInvoke(new Action(() => PositionWhenReady(waLeft, waWidth, waBottom)),
+            DispatcherPriority.Render);
+    }
+
+    private int _posTries;
+
+    private void PositionWhenReady(double waLeft, double waWidth, double waBottom)
+    {
+        if (!IsShowing) return; // user released Ctrl before layout settled
+        if (ActualWidth <= 0 || ActualHeight <= 0)
+        {
+            if (_posTries++ < 20)
+                Dispatcher.BeginInvoke(new Action(() => PositionWhenReady(waLeft, waWidth, waBottom)),
+                    DispatcherPriority.Render);
+            else
+                Log.Error("overlay position: layout never produced a size");
+            return;
+        }
+        double w = ActualWidth, h = ActualHeight;
+        double scale = Math.Min(1.0, waWidth * 0.75 / w);
         if (scale < 1.0)
         {
             KeyboardPanel.LayoutTransform = new ScaleTransform(scale, scale);
-            Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-            size = DesiredSize;
+            w *= scale;
+            h *= scale;
         }
-        Left = workArea.Left + (workArea.Width - size.Width) / 2;
-        Top = workArea.Bottom - size.Height - 40;
-
+        Left = waLeft + (waWidth - w) / 2;
+        Top = waBottom - h - 40;
+        Log.Info($"overlay pos: L={Left:F0} T={Top:F0} size={w:F0}x{h:F0} waL={waLeft:F0} waW={waWidth:F0} waB={waBottom:F0}");
         FadeTo(_settings.Opacity);
+
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            Native.Win32.GetWindowRect(hwnd, out var wr);
+            Log.Info($"overlay state: vis={Visibility} isVisible={IsVisible} op={RootBorder.Opacity:F2} " +
+                     $"actual={ActualWidth:F0}x{ActualHeight:F0} L={Left:F0} T={Top:F0} W={Width:F0} H={Height:F0} " +
+                     $"hwnd={hwnd} winrect=({wr.Left},{wr.Top},{wr.Right},{wr.Bottom}) " +
+                     $"rbDesired={RootBorder.DesiredSize.Width:F0}x{RootBorder.DesiredSize.Height:F0} " +
+                     $"rbRender={RootBorder.RenderSize.Width:F0}x{RootBorder.RenderSize.Height:F0} " +
+                     $"panelChildren={KeyboardPanel.Children.Count} rbVis={RootBorder.Visibility}");
+        };
+        t.Start();
+    }
+
+    /// <summary>Warm up measure+render once at startup so the first real show
+    /// doesn't stall the UI thread (a stall can make the OS drop low-level hook
+    /// callbacks → lost key-up events). The window must be ON-SCREEN: creating
+    /// the hwnd offscreen or with Window.Opacity=0 skips WPF's composition and
+    /// leaves the visual tree permanently unlaid-out (renders nothing).</summary>
+    public void Prewarm()
+    {
+        RootBorder.Opacity = 0; // invisible but still composed
+        var wa = SystemParameters.WorkArea;
+        Left = wa.Left + (wa.Width - 100) / 2;
+        Top = wa.Bottom - 200;
         Visibility = Visibility.Visible;
-        IsShowing = true;
+        // Collapse after a few frames so a real layout+render pass actually ran
+        // (UpdateLayout() is not synchronous for a just-shown window).
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            if (!IsShowing) Visibility = Visibility.Collapsed;
+        };
+        t.Start();
     }
 
     public void HideOverlay()
@@ -160,10 +223,10 @@ public partial class OverlayWindow : Window
             if (token == _animToken)
             {
                 Visibility = Visibility.Collapsed;
-                Opacity = 0;
+                RootBorder.Opacity = 0;
             }
         };
-        BeginAnimation(OpacityProperty, anim);
+        RootBorder.BeginAnimation(OpacityProperty, anim);
     }
 
     /// <summary>Briefly light up the key that was just pressed with Ctrl held.</summary>
@@ -188,13 +251,13 @@ public partial class OverlayWindow : Window
     private void FadeTo(double target)
     {
         int token = ++_animToken;
-        BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(140)));
+        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(140)));
         _ = token; // token just cancels any pending hide-completion
     }
 
     public void ForceClose()
     {
-        BeginAnimation(OpacityProperty, null);
+        RootBorder.BeginAnimation(OpacityProperty, null);
         Close();
     }
 }
