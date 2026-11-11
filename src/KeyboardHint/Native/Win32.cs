@@ -138,4 +138,13 @@ public static class Win32
         => Environment.Is64BitProcess ? GetWindowLongPtr64(hWnd, GWL_STYLE).ToInt64() : GetWindowLong32(hWnd, GWL_STYLE);
 
     public static bool KeyDown(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
+
+    // ---- DWM window attributes (Win11) ----
+    public const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+    public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+    public const int DWMWCP_ROUND = 2;
+    public const int DWMSBT_TRANSIENTWINDOW = 3; // acrylic-like transient backdrop
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 }

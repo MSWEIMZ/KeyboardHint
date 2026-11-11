@@ -7,22 +7,25 @@ using KeyboardHint.Core;
 using KeyboardHint.Profiles;
 using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
+using FontFamily = System.Windows.Media.FontFamily;
 using Orientation = System.Windows.Controls.Orientation;
 
 namespace KeyboardHint.Overlay;
 
 public partial class OverlayWindow : Window
 {
-    private static readonly Brush KeyBg = new SolidColorBrush(Color.FromRgb(0x2E, 0x2E, 0x34));
-    private static readonly Brush KeyBorder = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x52));
-    private static readonly Brush KeyLitBg = new SolidColorBrush(Color.FromRgb(0x1F, 0x47, 0x41));
-    private static readonly Brush KeyLitBorder = new SolidColorBrush(Color.FromRgb(0x3F, 0xB8, 0xA6));
-    private static readonly Brush KeyFlashBg = new SolidColorBrush(Color.FromRgb(0x35, 0x9C, 0x8C));
-    private static readonly Brush ModBg = new SolidColorBrush(Color.FromRgb(0x2B, 0x5B, 0x8C));
-    private static readonly Brush ModBorder = new SolidColorBrush(Color.FromRgb(0x5C, 0x9B, 0xD6));
-    private static readonly Brush TextMain = new SolidColorBrush(Color.FromRgb(0xED, 0xED, 0xED));
-    private static readonly Brush TextDim = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
-    private static readonly Brush TextAccent = new SolidColorBrush(Color.FromRgb(0x4E, 0xC9, 0xB0));
+    // Fluent-style palette: borderless keys defined by luminance layers,
+    // Win11 accent blue (#60CDFF) for shortcut annotations.
+    private static readonly Brush KeyBg = new SolidColorBrush(Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush KeyEdge = new SolidColorBrush(Color.FromArgb(0x59, 0x00, 0x00, 0x00));
+    private static readonly Brush KeyLitBg = new SolidColorBrush(Color.FromArgb(0x26, 0x60, 0xCD, 0xFF));
+    private static readonly Brush KeyLitEdge = new SolidColorBrush(Color.FromArgb(0xA6, 0x60, 0xCD, 0xFF));
+    private static readonly Brush KeyFlashBg = new SolidColorBrush(Color.FromArgb(0x4D, 0x60, 0xCD, 0xFF));
+    private static readonly Brush ModBg = new SolidColorBrush(Color.FromRgb(0x0F, 0x6C, 0xBD));
+    private static readonly Brush ModEdge = new SolidColorBrush(Color.FromRgb(0x60, 0xCD, 0xFF));
+    private static readonly Brush TextMain = new SolidColorBrush(Color.FromArgb(0xF2, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush TextAccent = new SolidColorBrush(Color.FromRgb(0x7C, 0xD1, 0xFF));
+    private static readonly FontFamily UiFont = new("Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI");
 
     private sealed class KeyVisual
     {
@@ -37,18 +40,37 @@ public partial class OverlayWindow : Window
 
     public bool IsShowing { get; private set; }
 
+    private readonly TranslateTransform _slide = new();
+
     public OverlayWindow(AppSettings settings)
     {
         _settings = settings;
         InitializeComponent();
+        System.Windows.Documents.TextElement.SetFontFamily(RootBorder, UiFont);
+        RootBorder.RenderTransform = _slide;
         BuildKeyboard();
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        // Win11 native rounded corners + acrylic transient backdrop (fluent flyout look).
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        int round = Native.Win32.DWMWCP_ROUND;
+        Native.Win32.DwmSetWindowAttribute(hwnd, Native.Win32.DWMWA_WINDOW_CORNER_PREFERENCE, ref round, sizeof(int));
+        int backdrop = Native.Win32.DWMSBT_TRANSIENTWINDOW;
+        int hr = Native.Win32.DwmSetWindowAttribute(hwnd, Native.Win32.DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
+        // Only go transparent where the backdrop actually applied — on older
+        // Windows a transparent opaque window renders solid black.
+        if (hr == 0)
+            Background = System.Windows.Media.Brushes.Transparent;
     }
 
     private void BuildKeyboard()
     {
         foreach (var row in KeyboardLayout.Build())
         {
-            var rowPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
+            var rowPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 3) };
             foreach (var def in row.Keys)
             {
                 if (def.Id.Length == 0)
@@ -60,23 +82,22 @@ public partial class OverlayWindow : Window
                 var shortcut = new TextBlock
                 {
                     FontSize = 10,
-                    FontWeight = FontWeights.Medium,
+                    FontWeight = FontWeights.SemiBold,
                     Foreground = TextAccent,
                     TextAlignment = TextAlignment.Center,
-                    TextWrapping = TextWrapping.Wrap,
+                    TextWrapping = TextWrapping.NoWrap,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
                     VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
-                    Margin = new Thickness(1, 0, 1, 3),
-                    MaxHeight = 26
+                    Margin = new Thickness(3, 0, 3, 5)
                 };
                 var legend = new TextBlock
                 {
                     Text = def.Label,
-                    FontSize = row.Height < 40 ? 10 : 13,
-                    FontWeight = FontWeights.SemiBold,
+                    FontSize = row.Height < 40 ? 10 : 12.5,
+                    FontWeight = FontWeights.Medium,
                     Foreground = TextMain,
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                    VerticalAlignment = row.Height < 40 ? System.Windows.VerticalAlignment.Center : System.Windows.VerticalAlignment.Top,
-                    Margin = new Thickness(0, row.Height < 40 ? 0 : 4, 0, 0)
+                    VerticalAlignment = System.Windows.VerticalAlignment.Center
                 };
                 var grid = new Grid();
                 grid.Children.Add(legend);
@@ -86,10 +107,11 @@ public partial class OverlayWindow : Window
                     Width = def.Width * KeyboardLayout.Unit - 6,
                     Height = row.Height,
                     Margin = new Thickness(3, 0, 3, 0),
-                    CornerRadius = new CornerRadius(6),
+                    CornerRadius = new CornerRadius(5),
                     Background = KeyBg,
-                    BorderBrush = KeyBorder,
-                    BorderThickness = new Thickness(1),
+                    // bottom-only dark edge reads as a physical key "lip"
+                    BorderBrush = KeyEdge,
+                    BorderThickness = new Thickness(0, 0, 0, 1),
                     Child = grid
                 };
                 rowPanel.Children.Add(border);
@@ -112,7 +134,7 @@ public partial class OverlayWindow : Window
         {
             kv.Value.Shortcut.Text = "";
             kv.Value.Border.Background = KeyBg;
-            kv.Value.Border.BorderBrush = KeyBorder;
+            kv.Value.Border.BorderBrush = KeyEdge;
         }
         foreach (var (id, desc) in layer)
         {
@@ -120,7 +142,7 @@ public partial class OverlayWindow : Window
             {
                 kv.Shortcut.Text = desc;
                 kv.Border.Background = KeyLitBg;
-                kv.Border.BorderBrush = KeyLitBorder;
+                kv.Border.BorderBrush = KeyLitEdge;
             }
         }
         // Highlight the modifier being held.
@@ -129,7 +151,7 @@ public partial class OverlayWindow : Window
             if (_keys.TryGetValue(id, out var kv))
             {
                 kv.Border.Background = ModBg;
-                kv.Border.BorderBrush = ModBorder;
+                kv.Border.BorderBrush = ModEdge;
             }
         }
 
@@ -189,28 +211,9 @@ public partial class OverlayWindow : Window
         t.Start();
     }
 
-    /// <summary>Warm up measure+render once at startup so the first real show
-    /// doesn't stall the UI thread (a stall can make the OS drop low-level hook
-    /// callbacks → lost key-up events). The window must be ON-SCREEN: creating
-    /// the hwnd offscreen or with Window.Opacity=0 skips WPF's composition and
-    /// leaves the visual tree permanently unlaid-out (renders nothing).</summary>
-    public void Prewarm()
-    {
-        RootBorder.Opacity = 0; // invisible but still composed
-        var wa = SystemParameters.WorkArea;
-        Left = wa.Left + (wa.Width - 100) / 2;
-        Top = wa.Bottom - 200;
-        Visibility = Visibility.Visible;
-        // Collapse after a few frames so a real layout+render pass actually ran
-        // (UpdateLayout() is not synchronous for a just-shown window).
-        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-        t.Tick += (_, _) =>
-        {
-            t.Stop();
-            if (!IsShowing) Visibility = Visibility.Collapsed;
-        };
-        t.Start();
-    }
+    // Note: no render prewarm — a hidden/offscreen warm-up breaks WPF layout
+    // (visual tree never arranges) and a visible one flashes on screen. First
+    // show costs ~300ms once; the hook watchdog heals any missed key-up.
 
     public void HideOverlay()
     {
@@ -251,7 +254,14 @@ public partial class OverlayWindow : Window
     private void FadeTo(double target)
     {
         int token = ++_animToken;
-        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(140)));
+        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(180)));
+        // Win11 flyout-style rise: slide up 14px while fading in.
+        _slide.Y = 14;
+        _slide.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(0, TimeSpan.FromMilliseconds(240))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
         _ = token; // token just cancels any pending hide-completion
     }
 
