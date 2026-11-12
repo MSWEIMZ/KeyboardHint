@@ -13,13 +13,16 @@ namespace KeyboardHint.Core;
 public sealed class CtrlHoldTrigger : IDisposable
 {
     private static readonly HashSet<int> CtrlKeys = new()
-        { Win32.VK_LCONTROL, Win32.VK_RCONTROL };
+        { Win32.VK_LCONTROL, Win32.VK_RCONTROL, Win32.VK_CONTROL };
 
-    private static readonly HashSet<int> OtherModifiers = new()
-    {
-        Win32.VK_LSHIFT, Win32.VK_RSHIFT, Win32.VK_LMENU, Win32.VK_RMENU,
-        Win32.VK_LWIN, Win32.VK_RWIN, Win32.VK_SHIFT, Win32.VK_CONTROL, Win32.VK_MENU
-    };
+    private static readonly HashSet<int> ShiftKeys = new()
+        { Win32.VK_LSHIFT, Win32.VK_RSHIFT, Win32.VK_SHIFT };
+
+    private static readonly HashSet<int> AltKeys = new()
+        { Win32.VK_LMENU, Win32.VK_RMENU, Win32.VK_MENU };
+
+    private static readonly HashSet<int> WinKeys = new()
+        { Win32.VK_LWIN, Win32.VK_RWIN };
 
     private readonly AppSettings _settings;
     private readonly ProfileStore _store;
@@ -31,6 +34,8 @@ public sealed class CtrlHoldTrigger : IDisposable
     private bool _pendingShow;
     private long _eventsSeen;
     private long _lastLoggedEvents;
+    private ShortcutProfile? _activeProfile;
+    private string _activeLayer = "ctrl";
 
     public bool Enabled { get; set; }
 
@@ -94,14 +99,28 @@ public sealed class CtrlHoldTrigger : IDisposable
         }
 
         if (down) _down.Add(vk); else _down.Remove(vk);
-        if (!down) return;
 
-        if (OtherModifiers.Contains(vk))
+        if (WinKeys.Contains(vk))
         {
-            // Ctrl+Shift/Alt/Win held → not the "pure Ctrl" gesture; hide/cancel.
-            HideAll();
+            // Win+Ctrl is OS-level (virtual desktops etc.) — always bail.
+            if (down) HideAll();
             return;
         }
+
+        if (ShiftKeys.Contains(vk) || AltKeys.Contains(vk))
+        {
+            if (down)
+            {
+                // Overlay already up → switch to the combo layer. Before it
+                // shows, Ctrl+Shift/Alt is an input-method or app hotkey
+                // gesture — stay suppressed.
+                if (IsShowing()) SwitchLayer();
+                else HideAll();
+            }
+            else if (IsShowing()) SwitchLayer(); // released → back to base layer
+            return;
+        }
+        if (!down) return;
 
         // A real key while Ctrl is held = an actual shortcut combo.
         if (_pendingShow)
@@ -115,6 +134,22 @@ public sealed class CtrlHoldTrigger : IDisposable
         }
     }
 
+    /// <summary>Current modifier layer from the tracked key set.</summary>
+    private string CurrentLayer()
+        => _down.Any(ShiftKeys.Contains) ? "ctrl+shift"
+         : _down.Any(AltKeys.Contains) ? "ctrl+alt"
+         : "ctrl";
+
+    private void SwitchLayer()
+    {
+        if (_activeProfile == null) return;
+        var layer = CurrentLayer();
+        if (layer == _activeLayer) return;
+        _activeLayer = layer;
+        Log.Info($"layer → {layer}");
+        _overlay.SetLayer(_activeProfile, layer);
+    }
+
     private void TryShow()
     {
         _pendingShow = false;
@@ -126,6 +161,8 @@ public sealed class CtrlHoldTrigger : IDisposable
         if (ctx.IsSuppressed(_settings.ExcludedProcesses)) { Log.Info($"suppressed: {ctx.ProcessName} excluded/fullscreen"); return; }
 
         var profile = _store.Resolve(ctx.ProcessName);
+        _activeProfile = profile;
+        _activeLayer = "ctrl";
         Log.Info($"show overlay: process={ctx.ProcessName} profile={profile.Id} dpi={ctx.DpiScale}");
         _overlay.ShowFor(profile, ctx);
     }
@@ -134,6 +171,7 @@ public sealed class CtrlHoldTrigger : IDisposable
     {
         _pendingShow = false;
         _holdTimer.Stop();
+        _activeProfile = null;
         _overlay.HideOverlay();
     }
 

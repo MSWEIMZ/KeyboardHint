@@ -1,0 +1,18 @@
+{
+  "id": "terminal",
+  "displayName": "终端",
+  "processes": ["windowsterminal", "wt", "warp"],
+  "layers": {
+    "ctrl": {
+      "T": "新标签", "W": "关闭标签", "Tab": "切换标签",
+      "OemComma": "设置", "OemPlus": "放大", "OemMinus": "缩小", "D0": "重置缩放",
+      "C": "复制", "V": "粘贴", "F": "查找"
+    },
+    "ctrl+shift": {
+      "P": "命令面板", "N": "新窗口", "T": "重开标签",
+      "C": "复制", "V": "粘贴", "F": "查找", "D": "复制标签",
+      "OemComma": "设置文件", "W": "关闭窗口", "Tab": "反向切标签",
+      "OemPlus": "放大", "OemMinus": "缩小"
+    }
+  }
+}

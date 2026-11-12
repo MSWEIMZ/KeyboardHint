@@ -1,0 +1,14 @@
+{
+  "id": "dingtalk",
+  "displayName": "钉钉",
+  "processes": ["dingtalk", "dingtalklite"],
+  "layers": {
+    "ctrl": {
+      "N": "新建聊天", "F": "搜索", "W": "关闭会话",
+      "Tab": "切换会话", "S": "发送", "OemComma": "设置"
+    },
+    "ctrl+shift": {
+      "A": "截图", "X": "打开工作台", "S": "发起直播", "D": "钉一下"
+    }
+  }
+}

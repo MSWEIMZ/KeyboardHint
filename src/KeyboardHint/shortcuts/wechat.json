@@ -1,0 +1,17 @@
+{
+  "id": "wechat",
+  "displayName": "微信",
+  "processes": ["wechat", "weixin"],
+  "layers": {
+    "ctrl": {
+      "F": "搜索", "N": "新建聊天", "W": "关闭窗口",
+      "Tab": "切换会话", "S": "收藏", "OemComma": "设置"
+    },
+    "ctrl+shift": {
+      "X": "打开文件位置", "D": "退出登录"
+    },
+    "ctrl+alt": {
+      "A": "截图", "W": "唤醒微信", "Z": "提取消息"
+    }
+  }
+}

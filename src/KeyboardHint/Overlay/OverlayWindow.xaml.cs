@@ -121,15 +121,18 @@ public partial class OverlayWindow : Window
         }
     }
 
-    public void ShowFor(ShortcutProfile profile, ForegroundContext ctx)
+    private static readonly Dictionary<string, string[]> LayerModifiers = new()
     {
-        // WorkArea is in physical pixels; WPF window coords are DIPs.
-        double s = Math.Max(0.5, ctx.DpiScale);
-        double waLeft = ctx.WorkArea.Left / s;
-        double waWidth = ctx.WorkArea.Width / s;
-        double waBottom = ctx.WorkArea.Bottom / s;
+        ["ctrl"] = new[] { "LControl", "RControl" },
+        ["ctrl+shift"] = new[] { "LControl", "RControl", "LShift", "RShift" },
+        ["ctrl+alt"] = new[] { "LControl", "RControl", "LAlt", "RAlt" },
+    };
 
-        var layer = profile.Layer("ctrl");
+    /// <summary>Re-render shortcut annotations for a modifier layer — used both
+    /// at show time and when the user presses Shift/Alt while Ctrl is held.</summary>
+    public void SetLayer(ShortcutProfile profile, string layerName)
+    {
+        var layer = profile.Layer(layerName);
         foreach (var kv in _keys)
         {
             kv.Value.Shortcut.Text = "";
@@ -145,8 +148,9 @@ public partial class OverlayWindow : Window
                 kv.Border.BorderBrush = KeyLitEdge;
             }
         }
-        // Highlight the modifier being held.
-        foreach (var id in new[] { "LControl", "RControl" })
+        // Highlight every modifier in the active chord.
+        var mods = LayerModifiers.TryGetValue(layerName, out var m) ? m : LayerModifiers["ctrl"];
+        foreach (var id in mods)
         {
             if (_keys.TryGetValue(id, out var kv))
             {
@@ -155,7 +159,22 @@ public partial class OverlayWindow : Window
             }
         }
 
-        Caption.Text = $"{profile.DisplayName} · Ctrl 快捷键";
+        var pretty = string.Join("+", layerName.Split('+')
+            .Select(x => char.ToUpperInvariant(x[0]) + x[1..]));
+        Caption.Text = layer.Count > 0
+            ? $"{profile.DisplayName} · {pretty} 快捷键"
+            : $"{profile.DisplayName} · {pretty}（暂无数据）";
+    }
+
+    public void ShowFor(ShortcutProfile profile, ForegroundContext ctx)
+    {
+        // WorkArea is in physical pixels; WPF window coords are DIPs.
+        double s = Math.Max(0.5, ctx.DpiScale);
+        double waLeft = ctx.WorkArea.Left / s;
+        double waWidth = ctx.WorkArea.Width / s;
+        double waBottom = ctx.WorkArea.Bottom / s;
+
+        SetLayer(profile, "ctrl");
 
         // Show while RootBorder.Opacity is still 0 (invisible), then position
         // AFTER the first real layout pass — UpdateLayout() does not produce a

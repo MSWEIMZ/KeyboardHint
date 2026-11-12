@@ -10,15 +10,16 @@
 
 1. 启动 `KeyboardHint.exe`（无窗口，驻留系统托盘）
 2. 在任意应用中**按住 Ctrl 约 0.4 秒** → 底部弹出快捷键键盘
-3. 松开 Ctrl → 键盘隐藏
-4. 按住 Ctrl 时实际按下的组合键会在键盘上高亮闪烁
-5. 托盘图标右键：启用/禁用、打开配置目录、重新加载快捷键、退出
+3. **保持 Ctrl 不松，加按 Shift 或 Alt** → 切换到 `Ctrl+Shift` / `Ctrl+Alt` 组合层，对应修饰键同步高亮；松开 Shift/Alt 回到 Ctrl 层
+4. 松开 Ctrl → 键盘隐藏
+5. 按住 Ctrl 时实际按下的组合键会在键盘上高亮闪烁
+6. 托盘图标右键：启用/禁用、打开配置目录、重新加载快捷键、退出
 
 ### 防误触发
 
 以下情况**不会**弹出键盘：
 - 按住 Ctrl 的同时按住了鼠标任意键（Ctrl+点击多选、Ctrl+拖拽）
-- 同时按住了 Shift / Alt / Win（非"纯 Ctrl"手势）
+- 弹出之前同时按住了 Shift / Alt / Win（非"纯 Ctrl"手势，避免切输入法等组合键误触发；**弹出之后**再加按 Shift/Alt 则是切换层）
 - 前台是无边框全屏应用（游戏/全屏视频）
 - 前台进程在 `settings.json` 的 `excludedProcesses` 列表中
 
@@ -31,8 +32,22 @@
 | `wps-et.json` | `et` | WPS 表格 |
 | `wps-wpp.json` | `wpp` | WPS 演示 |
 | `wps-pdf.json` | `wpspdf` | WPS PDF |
+| `msoffice-word.json` | `winword` | Word |
+| `msoffice-excel.json` | `excel` | Excel |
+| `msoffice-ppt.json` | `powerpnt` | PowerPoint |
 | `browser.json` | `chrome` `msedge` `firefox` `brave` `vivaldi` `opera` `360chrome` `qqbrowser` `2345explorer` | 浏览器 |
 | `vscode.json` | `code` | VS Code |
+| `explorer.json` | `explorer` | 资源管理器 |
+| `terminal.json` | `windowsterminal` `wt` `warp` | Windows Terminal |
+| `wechat.json` | `wechat` `weixin` | 微信 |
+| `qq.json` | `qq` `qqnt` | QQ |
+| `dingtalk.json` | `dingtalk` `dingtalklite` | 钉钉 |
+| `jianying.json` | `jianyingpro` `capcut` `vegaspro` | 剪映 / CapCut |
+| `photoshop.json` | `photoshop` | Photoshop |
+| `obsidian.json` | `obsidian` | Obsidian |
+| `notion.json` | `notion` | Notion |
+
+大部分配置同时带 `ctrl`、`ctrl+shift`（部分含 `ctrl+alt`）三层数据。
 
 ### 添加自己的应用
 
@@ -51,12 +66,18 @@
     "ctrl": {
       "S": "保存",
       "F5": "刷新"
+    },
+    "ctrl+shift": {
+      "S": "另存为"
+    },
+    "ctrl+alt": {
+      "V": "选择性粘贴"
     }
   }
 }
 ```
 
-`processes` 填进程名（不含 `.exe`，任务管理器→详细信息里看）。`layers.ctrl` 的键是**键 ID**：
+`processes` 填进程名（不含 `.exe`，任务管理器→详细信息里看）。`layers` 下可配 `ctrl` / `ctrl+shift` / `ctrl+alt` 三层（没有的层弹出时按对应修饰键会显示"暂无数据"）。每层的键是**键 ID**：
 
 - 字母：`A`–`Z`；数字：`D0`–`D9`（`D1`=主键区1）；功能键：`F1`–`F12`
 - 符号：`Oem3`(`) `OemMinus`(-) `OemPlus`(=) `Oem4`([) `Oem6`(]) `Oem5`(\\) `Oem1`(;) `Oem7`(') `OemComma`(,) `OemPeriod`(.) `Oem2`(/)
@@ -104,7 +125,7 @@ dotnet publish src\KeyboardHint\KeyboardHint.csproj -c Release -o publish
 
 ## 已知限制 / Roadmap
 
-- 只显示 Ctrl 单层；**Ctrl+Shift / Alt 组合层**切换在二期（JSON schema 已预留）
+- 组合层为 `ctrl+shift` / `ctrl+alt` 两层；`ctrl+win` 层 schema 预留但默认不做（避免与系统级快捷键冲突）
 - 不能点击键位直接触发快捷键（二期：overlay 需切换 `IsHitTestVisible` + `SendInput`）
 - 无快捷键配置编辑界面，手工编辑 JSON
 - 杀软可能因键盘钩子误报 —— 代码开源可自证；如需分发建议做代码签名
