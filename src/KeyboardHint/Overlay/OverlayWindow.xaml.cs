@@ -138,18 +138,36 @@ public partial class OverlayWindow : Window
         }
     }
 
-    private static readonly Dictionary<string, string[]> LayerModifiers = new()
+    private static readonly Dictionary<string, string[]> ModKeyIds = new()
     {
         ["ctrl"] = new[] { "LControl", "RControl" },
-        ["ctrl+shift"] = new[] { "LControl", "RControl", "LShift", "RShift" },
-        ["ctrl+alt"] = new[] { "LControl", "RControl", "LAlt", "RAlt" },
+        ["alt"] = new[] { "LAlt", "RAlt" },
+        ["shift"] = new[] { "LShift", "RShift" },
+        ["win"] = new[] { "LWin", "RWin" },
     };
 
-    /// <summary>Re-render shortcut annotations for a modifier layer — used both
-    /// at show time and when the user presses Shift/Alt while Ctrl is held.</summary>
-    public void SetLayer(ShortcutProfile profile, string layerName)
+    private bool _pinned;
+    private ShortcutProfile? _lastProfile;
+    private string _lastLayerName = "ctrl";
+    private IReadOnlyDictionary<string, string>? _lastLayer;
+
+    /// <summary>Pinned overlays get a hint in the caption so the dismissal
+    /// gesture (tap the trigger key again) is discoverable.</summary>
+    public void SetPinned(bool pinned)
     {
-        var layer = profile.Layer(layerName);
+        _pinned = pinned;
+        if (_lastProfile != null && _lastLayer != null)
+            SetLayer(_lastProfile, _lastLayerName, _lastLayer); // refresh caption
+    }
+
+    /// <summary>Re-render shortcut annotations for a modifier layer — used both
+    /// at show time and when the user presses another modifier while holding
+    /// the trigger key.</summary>
+    public void SetLayer(ShortcutProfile profile, string layerName, IReadOnlyDictionary<string, string> layer)
+    {
+        _lastProfile = profile;
+        _lastLayerName = layerName;
+        _lastLayer = layer;
         foreach (var kv in _keys)
         {
             kv.Value.Shortcut.Text = "";
@@ -166,8 +184,7 @@ public partial class OverlayWindow : Window
             }
         }
         // Highlight every modifier in the active chord.
-        var mods = LayerModifiers.TryGetValue(layerName, out var m) ? m : LayerModifiers["ctrl"];
-        foreach (var id in mods)
+        foreach (var id in layerName.Split('+').SelectMany(p => ModKeyIds.TryGetValue(p, out var m) ? m : Array.Empty<string>()))
         {
             if (_keys.TryGetValue(id, out var kv))
             {
@@ -178,12 +195,13 @@ public partial class OverlayWindow : Window
 
         var pretty = string.Join("+", layerName.Split('+')
             .Select(x => char.ToUpperInvariant(x[0]) + x[1..]));
-        Caption.Text = layer.Count > 0
+        Caption.Text = (layer.Count > 0
             ? $"{profile.DisplayName} · {pretty} 快捷键"
-            : $"{profile.DisplayName} · {pretty}（暂无数据）";
+            : $"{profile.DisplayName} · {pretty}（暂无数据）")
+            + (_pinned ? "　·　已钉住（再按一次修饰键关闭）" : "");
     }
 
-    public void ShowFor(ShortcutProfile profile, ForegroundContext ctx)
+    public void ShowFor(ShortcutProfile profile, ForegroundContext ctx, string layerName, IReadOnlyDictionary<string, string> layer)
     {
         // WorkArea is in physical pixels; WPF window coords are DIPs.
         double s = Math.Max(0.5, ctx.DpiScale);
@@ -191,7 +209,7 @@ public partial class OverlayWindow : Window
         double waWidth = ctx.WorkArea.Width / s;
         double waBottom = ctx.WorkArea.Bottom / s;
 
-        SetLayer(profile, "ctrl");
+        SetLayer(profile, layerName, layer);
 
         // Show while RootBorder.Opacity is still 0 (invisible), then position
         // AFTER the first real layout pass — UpdateLayout() does not produce a

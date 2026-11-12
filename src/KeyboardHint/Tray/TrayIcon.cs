@@ -13,17 +13,60 @@ public sealed class TrayIcon : IDisposable
     private readonly NotifyIcon _icon;
     private readonly ToolStripMenuItem _enabledItem;
 
-    public TrayIcon(CtrlHoldTrigger trigger, ProfileStore store)
+    public TrayIcon(ModifierHoldTrigger trigger, ProfileStore store, AppSettings settings)
     {
-        _enabledItem = new ToolStripMenuItem("已启用（按住 Ctrl 显示快捷键）")
+        _enabledItem = new ToolStripMenuItem("已启用（按住修饰键显示快捷键）")
         {
             Checked = trigger.Enabled,
             CheckOnClick = true
         };
         _enabledItem.CheckedChanged += (_, _) => trigger.Enabled = _enabledItem.Checked;
 
+        var triggersMenu = new ToolStripMenuItem("触发键");
+        var modNames = new (string Id, string Label)[]
+        {
+            ("ctrl", "Ctrl"), ("alt", "Alt"), ("win", "Win"), ("shift", "Shift")
+        };
+        foreach (var (id, label) in modNames)
+        {
+            var item = new ToolStripMenuItem(label)
+            {
+                Checked = settings.Trigger(id).Enabled,
+                CheckOnClick = true
+            };
+            item.CheckedChanged += (_, _) =>
+            {
+                settings.Triggers[id] = new TriggerCfg
+                {
+                    Enabled = item.Checked,
+                    DelayMs = settings.Trigger(id).DelayMs,
+                    SuppressRelease = settings.Trigger(id).SuppressRelease
+                };
+                settings.Save();
+            };
+            triggersMenu.DropDownItems.Add(item);
+        }
+
+        var pinItem = new ToolStripMenuItem("钉住模式（松开后保持显示，再按一次关闭）")
+        {
+            Checked = settings.StayOnRelease,
+            CheckOnClick = true
+        };
+        pinItem.CheckedChanged += (_, _) =>
+        {
+            settings.StayOnRelease = pinItem.Checked;
+            settings.Save();
+        };
+
         var menu = new ContextMenuStrip();
         menu.Items.Add(_enabledItem);
+        menu.Items.Add(triggersMenu);
+        menu.Items.Add(pinItem);
+        menu.Items.Add(new ToolStripMenuItem("设置…", null, (_, _) =>
+        {
+            var w = new KeyboardHint.Overlay.SettingsWindow(settings, store);
+            w.ShowDialog();
+        }));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("打开配置/快捷键目录", null, (_, _) => OpenConfigDir()));
         menu.Items.Add(new ToolStripMenuItem("重新加载快捷键配置", null, (_, _) =>
@@ -37,7 +80,7 @@ public sealed class TrayIcon : IDisposable
 
         _icon = new NotifyIcon
         {
-            Text = "键盘小助手 — 按住 Ctrl 显示快捷键",
+            Text = "键盘小助手 — 按住 Ctrl/Alt/Win 显示快捷键",
             Icon = MakeIcon(),
             ContextMenuStrip = menu,
             Visible = true

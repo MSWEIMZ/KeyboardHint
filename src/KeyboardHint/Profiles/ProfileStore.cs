@@ -17,6 +17,10 @@ public class ProfileStore
 
     public IReadOnlyList<ShortcutProfile> All => _profiles;
 
+    /// <summary>The "default" profile — also the fallback source for layers a
+    /// specific app profile doesn't define (e.g. OS-level win/alt layers).</summary>
+    public ShortcutProfile Default => _fallback;
+
     public void ReloadFrom(ProfileStore fresh)
     {
         _profiles.Clear();

@@ -3,6 +3,20 @@ using System.Text.Json;
 
 namespace KeyboardHint.Core;
 
+/// <summary>Per-modifier trigger config: which keys can be held to show the
+/// overlay, at what delay, and whether the release keypress is swallowed
+/// (Win needs it so Start menu doesn't open).</summary>
+public class TriggerCfg
+{
+    public bool Enabled { get; set; } = true;
+    /// <summary>null = use global delayMs.</summary>
+    public int? DelayMs { get; set; }
+    /// <summary>Inject an unmapped F24 keypress while the trigger is held so
+    /// its release counts as a chord — Win: no Start menu; Alt: no menu-bar
+    /// focus grab.</summary>
+    public bool SuppressRelease { get; set; }
+}
+
 public class AppSettings
 {
     public bool Enabled { get; set; } = true;
@@ -13,8 +27,26 @@ public class AppSettings
     /// <summary>Overlay opacity 0..1.</summary>
     public double Opacity { get; set; } = 0.92;
 
+    /// <summary>Pin mode: overlay stays visible after the modifier is released;
+    /// tap the trigger key again or click anywhere to dismiss.</summary>
+    public bool StayOnRelease { get; set; }
+
+    /// <summary>Modifier triggers: ctrl / alt / win / shift.</summary>
+    public Dictionary<string, TriggerCfg> Triggers { get; set; } = new()
+    {
+        ["ctrl"] = new(),
+        ["alt"] = new() { SuppressRelease = true },
+        ["win"] = new() { DelayMs = 600, SuppressRelease = true },
+        ["shift"] = new() { Enabled = false },
+    };
+
     /// <summary>Process names (no .exe, lowercase) where the overlay never shows.</summary>
     public List<string> ExcludedProcesses { get; set; } = new();
+
+    public TriggerCfg Trigger(string name)
+        => Triggers.TryGetValue(name, out var c) ? c : new TriggerCfg { Enabled = false };
+
+    public int DelayFor(string name) => Math.Max(150, Trigger(name).DelayMs ?? DelayMs);
 
     /// <summary>Where to find shortcut profiles: bundled dir, then user dir overrides.</summary>
     public static string BundledDir => AppContext.BaseDirectory;
@@ -31,6 +63,18 @@ public class AppSettings
             catch (Exception ex) { Log.Error($"load settings {path}", ex); }
         }
         return new AppSettings();
+    }
+
+    /// <summary>Persist to the user settings file (tray toggles / settings UI).</summary>
+    public void Save()
+    {
+        try
+        {
+            Directory.CreateDirectory(Log.UserDir);
+            File.WriteAllText(UserSettingsPath(),
+                JsonSerializer.Serialize(this, new JsonSerializerOptions(JsonOpts()) { WriteIndented = true }));
+        }
+        catch (Exception ex) { Log.Error("save settings", ex); }
     }
 
     public static string UserSettingsPath() => Path.Combine(Log.UserDir, "settings.json");

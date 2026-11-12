@@ -61,6 +61,15 @@ public static class Win32
     public const int VK_OEM_5 = 0xDC;
     public const int VK_OEM_6 = 0xDD;
     public const int VK_OEM_7 = 0xDE;
+    public const int VK_F24 = 0x87;
+
+    public const uint KEYEVENTF_KEYUP = 0x0002;
+
+    /// <summary>Inject a key event — used to send the unmapped F24 dummy key
+    /// that turns a bare modifier tap into a chord (prevents Start menu on
+    /// Win release, menu-bar focus on Alt release).</summary>
+    [DllImport("user32.dll")]
+    public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
     public const uint MONITOR_DEFAULTTONEAREST = 2;
     public const int GWL_STYLE = -16;

@@ -1,0 +1,72 @@
+<Window x:Class="KeyboardHint.Overlay.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="键盘小助手 · 设置" Width="420" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Topmost="True" Background="#FAFAFB">
+    <Window.Resources>
+        <Style x:Key="Title" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#FF1B1B1F"/>
+        </Style>
+        <Style x:Key="Sec" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#FF6B6B72"/>
+            <Setter Property="Margin" Value="0,14,0,6"/>
+        </Style>
+        <Style x:Key="Chk" TargetType="CheckBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#FF1B1B1F"/>
+            <Setter Property="Margin" Value="0,0,18,0"/>
+        </Style>
+        <Style x:Key="Lbl" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#FF1B1B1F"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+    <Border Margin="20">
+        <StackPanel>
+            <TextBlock Text="键盘小助手" Style="{StaticResource Title}"/>
+            <TextBlock Text="按住修饰键，屏幕底部弹出当前应用的快捷键键盘。" FontSize="12" Foreground="#FF6B6B72" Margin="0,4,0,0" TextWrapping="Wrap"/>
+
+            <TextBlock Text="触发键（按住显示快捷键键盘）" Style="{StaticResource Sec}"/>
+            <StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="ChkCtrl" Content="Ctrl" Style="{StaticResource Chk}"/>
+                <CheckBox x:Name="ChkAlt" Content="Alt" Style="{StaticResource Chk}"/>
+                <CheckBox x:Name="ChkWin" Content="Win" Style="{StaticResource Chk}"/>
+                <CheckBox x:Name="ChkShift" Content="Shift" Style="{StaticResource Chk}"/>
+            </StackPanel>
+            <TextBlock Text="· Win 按住单独可调延迟（松手不弹开始菜单）&#xA;· Alt 层 = 功能区快捷键提示 + 系统级 Alt 组合&#xA;· Shift 快捷键很少，默认关闭"
+                       FontSize="11" Foreground="#FF8B8B92" Margin="0,6,0,0" TextWrapping="Wrap" LineHeight="16"/>
+
+            <TextBlock Text="弹出延迟（按住多少毫秒后显示）" Style="{StaticResource Sec}"/>
+            <DockPanel Margin="0,0,0,4">
+                <TextBlock x:Name="DelayText" DockPanel.Dock="Right" Width="46" TextAlignment="Right" Style="{StaticResource Lbl}"/>
+                <Slider x:Name="DelaySlider" Minimum="200" Maximum="1200" TickFrequency="50" IsSnapToTickEnabled="True"/>
+            </DockPanel>
+
+            <TextBlock Text="面板不透明度" Style="{StaticResource Sec}"/>
+            <DockPanel Margin="0,0,0,4">
+                <TextBlock x:Name="OpacityText" DockPanel.Dock="Right" Width="46" TextAlignment="Right" Style="{StaticResource Lbl}"/>
+                <Slider x:Name="OpacitySlider" Minimum="50" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"/>
+            </DockPanel>
+
+            <TextBlock Text="显示模式" Style="{StaticResource Sec}"/>
+            <CheckBox x:Name="ChkPin" Style="{StaticResource Chk}">
+                <TextBlock Text="钉住模式：松开修饰键后保持显示，再按一次触发键关闭" TextWrapping="Wrap"/>
+            </CheckBox>
+
+            <TextBlock Text="排除的进程（不弹出；逗号分隔，不带 .exe）" Style="{StaticResource Sec}"/>
+            <TextBox x:Name="ExcludedBox" FontSize="12" Padding="6,4" BorderThickness="1" BorderBrush="#FFD0D0D6"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,18,0,0" HorizontalAlignment="Right">
+                <Button x:Name="BtnDir" Content="快捷键目录" Padding="14,6" Margin="0,0,10,0" Click="OnOpenDir"/>
+                <Button x:Name="BtnSave" Content="保存" Padding="18,6" Click="OnSave"
+                        Background="#FF0067C0" Foreground="White" BorderThickness="0"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

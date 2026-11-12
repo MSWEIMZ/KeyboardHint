@@ -2,5 +2,12 @@
   "enabled": true,
   "delayMs": 400,
   "opacity": 0.92,
+  "stayOnRelease": false,
+  "triggers": {
+    "ctrl":  { "enabled": true },
+    "alt":   { "enabled": true, "suppressRelease": true },
+    "win":   { "enabled": true, "delayMs": 600, "suppressRelease": true },
+    "shift": { "enabled": false }
+  },
   "excludedProcesses": []
 }

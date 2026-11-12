@@ -4,16 +4,17 @@ using KeyboardHint.Native;
 namespace KeyboardHint.Core;
 
 /// <summary>
-/// Global low-level keyboard hook. Purely passive: every event is forwarded
-/// to CallNextHookEx, nothing is ever swallowed or recorded.
+/// Global low-level keyboard hook. Events are forwarded to CallNextHookEx and
+/// nothing is recorded — the ONLY swallowed event is a trigger key's key-up
+/// after the overlay was shown (e.g. Win, so Start menu doesn't open).
 /// </summary>
 public sealed class KeyboardHook : IDisposable
 {
     private Win32.HookProc? _proc; // keep delegate alive for GC
     private IntPtr _hook;
 
-    /// <summary>(vkCode, isDown)</summary>
-    public event Action<int, bool>? KeyEvent;
+    /// <summary>(vkCode, isDown) → true = swallow this event.</summary>
+    public event Func<int, bool, bool>? KeyEvent;
 
     public bool Install()
     {
@@ -34,7 +35,8 @@ public sealed class KeyboardHook : IDisposable
                 try
                 {
                     var kbd = Marshal.PtrToStructure<Win32.KBDLLHOOKSTRUCT>(lParam);
-                    KeyEvent?.Invoke((int)kbd.vkCode, down);
+                    if (KeyEvent?.Invoke((int)kbd.vkCode, down) == true)
+                        return (IntPtr)1;
                 }
                 catch (Exception ex)
                 {

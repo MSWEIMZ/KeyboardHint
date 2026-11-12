@@ -12,7 +12,7 @@ public partial class App : System.Windows.Application
     private Mutex? _mutex;
     private KeyboardHook? _hook;
     private MouseHook? _mouseHook;
-    private CtrlHoldTrigger? _trigger;
+    private ModifierHoldTrigger? _trigger;
     private OverlayWindow? _overlay;
     private TrayIcon? _tray;
 
@@ -33,7 +33,7 @@ public partial class App : System.Windows.Application
         var settings = AppSettings.Load();
         var store = ProfileStore.Load();
         _overlay = new OverlayWindow(settings);
-        _trigger = new CtrlHoldTrigger(settings, store, _overlay);
+        _trigger = new ModifierHoldTrigger(settings, store, _overlay);
         _hook = new KeyboardHook();
         _hook.KeyEvent += _trigger.OnKey;
         _mouseHook = new MouseHook();
@@ -51,7 +51,7 @@ public partial class App : System.Windows.Application
         Log.Info("keyboard hook installed");
 
         _trigger.Start();
-        _tray = new TrayIcon(_trigger, store);
+        _tray = new TrayIcon(_trigger, store, settings);
     }
 
     protected override void OnExit(ExitEventArgs e)
