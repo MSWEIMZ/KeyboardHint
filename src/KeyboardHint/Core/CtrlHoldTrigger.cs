@@ -57,6 +57,7 @@ public sealed class CtrlHoldTrigger : IDisposable
             foreach (var vk in _down.ToList())
                 if (!Win32.KeyDown(vk)) _down.Remove(vk);
             if (IsShowing() && !AnyCtrlDown()) HideAll();
+            else if (IsShowing()) SwitchLayer(); // re-sync layer if a modifier key-up was lost
             if (_eventsSeen != _lastLoggedEvents)
             {
                 _lastLoggedEvents = _eventsSeen;
