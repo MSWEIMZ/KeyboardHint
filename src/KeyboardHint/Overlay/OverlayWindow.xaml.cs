@@ -198,7 +198,7 @@ public partial class OverlayWindow : Window
         Caption.Text = (layer.Count > 0
             ? $"{profile.DisplayName} · {pretty} 快捷键"
             : $"{profile.DisplayName} · {pretty}（暂无数据）")
-            + (_pinned ? "　·　已钉住（再按一次修饰键关闭）" : "");
+            + (_pinned ? "　·　已钉住（再按一次修饰键关闭）" : "　·　加按其他修饰键切层");
     }
 
     public void ShowFor(ShortcutProfile profile, ForegroundContext ctx, string layerName, IReadOnlyDictionary<string, string> layer)
@@ -246,23 +246,8 @@ public partial class OverlayWindow : Window
         }
         Left = waLeft + (waWidth - w) / 2;
         Top = waBottom - h - 40;
-        Log.Info($"overlay pos: L={Left:F0} T={Top:F0} size={w:F0}x{h:F0} waL={waLeft:F0} waW={waWidth:F0} waB={waBottom:F0}");
+        Log.Info($"overlay pos: L={Left:F0} T={Top:F0} size={w:F0}x{h:F0}");
         FadeTo(_settings.Opacity);
-
-        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
-        t.Tick += (_, _) =>
-        {
-            t.Stop();
-            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-            Native.Win32.GetWindowRect(hwnd, out var wr);
-            Log.Info($"overlay state: vis={Visibility} isVisible={IsVisible} op={RootBorder.Opacity:F2} " +
-                     $"actual={ActualWidth:F0}x{ActualHeight:F0} L={Left:F0} T={Top:F0} W={Width:F0} H={Height:F0} " +
-                     $"hwnd={hwnd} winrect=({wr.Left},{wr.Top},{wr.Right},{wr.Bottom}) " +
-                     $"rbDesired={RootBorder.DesiredSize.Width:F0}x{RootBorder.DesiredSize.Height:F0} " +
-                     $"rbRender={RootBorder.RenderSize.Width:F0}x{RootBorder.RenderSize.Height:F0} " +
-                     $"panelChildren={KeyboardPanel.Children.Count} rbVis={RootBorder.Visibility}");
-        };
-        t.Start();
     }
 
     // Note: no render prewarm — a hidden/offscreen warm-up breaks WPF layout

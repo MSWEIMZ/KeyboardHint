@@ -6,6 +6,10 @@
 
 ![交互示意](docs/screenshot.png)
 
+按住 Win 的效果（松手不弹开始菜单）：
+
+![Win 快捷键层](docs/screenshot-win.png)
+
 ## 使用方式
 
 1. 启动 `KeyboardHint.exe`（无窗口，驻留系统托盘）
