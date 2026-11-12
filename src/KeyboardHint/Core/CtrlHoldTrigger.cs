@@ -56,7 +56,7 @@ public sealed class CtrlHoldTrigger : IDisposable
         {
             foreach (var vk in _down.ToList())
                 if (!Win32.KeyDown(vk)) _down.Remove(vk);
-            if (IsShowing() && !AnyCtrlDown()) HideAll();
+            if (IsShowing() && (!AnyCtrlDown() || !Enabled)) HideAll();
             else if (IsShowing()) SwitchLayer(); // re-sync layer if a modifier key-up was lost
             if (_eventsSeen != _lastLoggedEvents)
             {
@@ -133,6 +133,16 @@ public sealed class CtrlHoldTrigger : IDisposable
         {
             _overlay.FlashKey(vk); // moment of delight: light up the key they just used
         }
+    }
+
+    /// <summary>Wheel/button activity while Ctrl is held = the user is
+    /// zooming or multi-selecting, not hunting shortcuts — never show,
+    /// and hide an already-visible overlay.</summary>
+    public void OnMouseActivity()
+    {
+        if (!IsShowing() && !_pendingShow) return;
+        HideAll();
+        Log.Info("suppressed: mouse activity while ctrl held");
     }
 
     /// <summary>Current modifier layer from the tracked key set.</summary>

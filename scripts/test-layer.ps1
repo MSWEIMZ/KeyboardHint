@@ -1,5 +1,6 @@
 # layer-switch test via SendInput with correct x64 INPUT union (40 bytes)
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;

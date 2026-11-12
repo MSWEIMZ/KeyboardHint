@@ -11,6 +11,7 @@ public partial class App : System.Windows.Application
 {
     private Mutex? _mutex;
     private KeyboardHook? _hook;
+    private MouseHook? _mouseHook;
     private CtrlHoldTrigger? _trigger;
     private OverlayWindow? _overlay;
     private TrayIcon? _tray;
@@ -35,6 +36,9 @@ public partial class App : System.Windows.Application
         _trigger = new CtrlHoldTrigger(settings, store, _overlay);
         _hook = new KeyboardHook();
         _hook.KeyEvent += _trigger.OnKey;
+        _mouseHook = new MouseHook();
+        _mouseHook.Activity += _trigger.OnMouseActivity;
+        _mouseHook.Install(); // passive; failure only loses wheel/click suppression
 
         if (!_hook.Install())
         {
@@ -55,6 +59,7 @@ public partial class App : System.Windows.Application
         _tray?.Dispose();
         _trigger?.Dispose();
         _hook?.Dispose();
+        _mouseHook?.Dispose();
         _overlay?.ForceClose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();

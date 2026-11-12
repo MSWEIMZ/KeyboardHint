@@ -70,6 +70,7 @@ public partial class OverlayWindow : Window
     {
         foreach (var row in KeyboardLayout.Build())
         {
+            bool shortRow = row.Height < 40;
             var rowPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 3) };
             foreach (var def in row.Keys)
             {
@@ -79,32 +80,48 @@ public partial class OverlayWindow : Window
                     continue;
                 }
 
+                double keyWidth = def.Width * KeyboardLayout.Unit - 6;
                 var shortcut = new TextBlock
                 {
-                    FontSize = 10,
+                    FontSize = shortRow ? 8.5 : 10.5,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = TextAccent,
                     TextAlignment = TextAlignment.Center,
-                    TextWrapping = TextWrapping.NoWrap,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    // short rows: single line + shrink to fit; tall rows: wrap to 2 lines first
+                    TextWrapping = shortRow ? TextWrapping.NoWrap : TextWrapping.Wrap,
+                    MaxWidth = keyWidth - 4,
+                    LineHeight = shortRow ? 10 : 12,
+                    LineStackingStrategy = LineStackingStrategy.BlockLineHeight
+                };
+                // Viewbox scales over-long text down instead of clipping it.
+                var shortcutBox = new Viewbox
+                {
+                    Stretch = Stretch.Uniform,
+                    StretchDirection = StretchDirection.DownOnly,
                     VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
-                    Margin = new Thickness(3, 0, 3, 5)
+                    Margin = new Thickness(1, 0, 1, shortRow ? 1 : 4),
+                    MaxHeight = shortRow ? 10 : 24,
+                    Child = shortcut
                 };
                 var legend = new TextBlock
                 {
                     Text = def.Label,
-                    FontSize = row.Height < 40 ? 10 : 12.5,
+                    FontSize = shortRow ? 9 : 13,
                     FontWeight = FontWeights.Medium,
                     Foreground = TextMain,
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                    VerticalAlignment = System.Windows.VerticalAlignment.Center
+                    // short rows: legend pinned top so the annotation owns the bottom
+                    VerticalAlignment = shortRow
+                        ? System.Windows.VerticalAlignment.Top
+                        : System.Windows.VerticalAlignment.Center,
+                    Margin = shortRow ? new Thickness(0, 2, 0, 0) : new Thickness(0)
                 };
                 var grid = new Grid();
                 grid.Children.Add(legend);
-                grid.Children.Add(shortcut);
+                grid.Children.Add(shortcutBox);
                 var border = new Border
                 {
-                    Width = def.Width * KeyboardLayout.Unit - 6,
+                    Width = keyWidth,
                     Height = row.Height,
                     Margin = new Thickness(3, 0, 3, 0),
                     CornerRadius = new CornerRadius(5),
