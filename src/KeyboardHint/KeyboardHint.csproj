@@ -22,8 +22,11 @@
     <DebugType>none</DebugType>
     <!-- 体积优化：压缩单文件包内程序集 -->
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <!-- 体积优化：不内嵌 ICU 全球化数据（仅枚举比较进程名，无需完整文化数据） -->
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- 体积优化：不内嵌 ICU 数据，改走 Windows NLS。注意不能用
+         InvariantGlobalization —— WPF 绑定引擎会解析 en-US 区域性，
+         invariant 模式下 XmlLanguage.GetSpecificCulture() 直接抛异常，
+         设置窗口里点任何 CheckBox 都会崩。PredefinedCulturesOnly 省同样的体积且安全。 -->
+    <PredefinedCulturesOnly>true</PredefinedCulturesOnly>
     <!-- 体积优化：只保留英文卫星程序集 -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <!-- 内存优化：后台常驻应用用低功耗 GC 模式 -->

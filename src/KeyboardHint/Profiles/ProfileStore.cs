@@ -84,7 +84,7 @@ public class ProfileStore
         var profiles = map.Values.ToList();
         var fallback = profiles.FirstOrDefault(p => p.Id == "default")
             ?? new ShortcutProfile { Id = "default", DisplayName = "通用" };
-        Log.Info($"profiles loaded: {profiles.Count} ({string.Join(", ", profiles.Select(p => p.Id))})");
+        Log.Info($"profiles loaded: {profiles.Count}");
         return new ProfileStore(profiles, fallback);
     }
 }

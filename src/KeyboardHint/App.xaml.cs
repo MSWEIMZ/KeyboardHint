@@ -33,6 +33,17 @@ public partial class App : System.Windows.Application
 
         Log.Init();
         Log.Info("=== KeyboardHint starting ===");
+        // Probe: PredefinedCulturesOnly must still resolve real cultures —
+        // InvariantGlobalization throws here and breaks every WPF binding.
+        Log.Info($"culture: {System.Globalization.CultureInfo.CurrentCulture.Name} en-US={System.Globalization.CultureInfo.GetCultureInfo("en-US").Name}");
+
+        // A tray app should degrade to a log line, not die in a modal dialog —
+        // any unexpected UI exception is logged and the app keeps running.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            Log.Error("unhandled UI exception", args.Exception);
+            args.Handled = true;
+        };
 
         var settings = AppSettings.Load();
         // Broken GPU pipelines (driver/D3D state) leave every WPF window
