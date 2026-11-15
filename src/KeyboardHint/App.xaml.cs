@@ -59,6 +59,7 @@ public partial class App : System.Windows.Application
 
         _trigger.Start();
         _tray = new TrayIcon(_trigger, store, settings);
+        _overlay.Prewarm(); // 1px invisible show warms hwnd+fonts — first trigger is instant
     }
 
     protected override void OnExit(ExitEventArgs e)

@@ -22,7 +22,7 @@ public class AppSettings
     public bool Enabled { get; set; } = true;
 
     /// <summary>Hold delay in ms before the overlay pops up.</summary>
-    public int DelayMs { get; set; } = 400;
+    public int DelayMs { get; set; } = 280;
 
     /// <summary>Overlay opacity 0..1.</summary>
     public double Opacity { get; set; } = 0.92;
@@ -42,7 +42,7 @@ public class AppSettings
     {
         ["ctrl"] = new(),
         ["alt"] = new() { SuppressRelease = true },
-        ["win"] = new() { DelayMs = 600, SuppressRelease = true },
+        ["win"] = new() { DelayMs = 450, SuppressRelease = true },
         ["shift"] = new() { Enabled = false },
     };
 

@@ -113,21 +113,21 @@
 ```json
 {
   "enabled": true,
-  "delayMs": 400,
+  "delayMs": 280,
   "opacity": 0.92,
   "stayOnRelease": false,
   "renderMode": "software",
   "triggers": {
     "ctrl":  { "enabled": true },
     "alt":   { "enabled": true, "suppressRelease": true },
-    "win":   { "enabled": true, "delayMs": 600, "suppressRelease": true },
+    "win":   { "enabled": true, "delayMs": 450, "suppressRelease": true },
     "shift": { "enabled": false }
   },
   "excludedProcesses": ["game1", "game2"]
 }
 ```
 
-- `delayMs`：按住修饰键多久后弹出（150ms 起）；`triggers.*.delayMs` 可给某个键单独设（默认 Win 600ms 防误触）
+- `delayMs`：按住修饰键多久后弹出（150ms 起，默认 280ms）；`triggers.*.delayMs` 可给某个键单独设（Win 默认 450ms 防误触）
 - `triggers`：每个修饰键独立开关；`suppressRelease` = 按住时注入 F24 哑键，松开不算单独按键（Win 防开始菜单、Alt 防菜单栏抢焦点）
 - `stayOnRelease`：钉住模式，松开后保持显示，再按一次触发键关闭
 - `opacity`：键盘整体不透明度 0–1

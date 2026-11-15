@@ -7,6 +7,7 @@ using KeyboardHint.Core;
 using KeyboardHint.Profiles;
 using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
+using Size = System.Windows.Size;
 using FontFamily = System.Windows.Media.FontFamily;
 using Orientation = System.Windows.Controls.Orientation;
 
@@ -211,32 +212,32 @@ public partial class OverlayWindow : Window
 
         SetLayer(profile, layerName, layer);
 
-        // Show while RootBorder.Opacity is still 0 (invisible), then position
-        // AFTER the first real layout pass — UpdateLayout() does not produce a
-        // non-zero ActualSize synchronously for a just-shown window.
+        Width = double.NaN; Height = double.NaN; // in case Prewarm's 1px size is still on
         KeyboardPanel.LayoutTransform = Transform.Identity;
         Visibility = Visibility.Visible;
         IsShowing = true;
+        // Once we've rendered at least once we know the size: position
+        // synchronously so the panel appears already centered — no invisible
+        // layout hop. The Render-priority pass below corrects any drift.
+        _faded = false;
+        if (_posSize.Width > 0)
+        {
+            Position(_posSize, waLeft, waWidth, waBottom);
+            FadeTo(_settings.Opacity);
+            _faded = true;
+        }
         _posTries = 0;
         Dispatcher.BeginInvoke(new Action(() => PositionWhenReady(waLeft, waWidth, waBottom)),
             DispatcherPriority.Render);
     }
 
+    private Size _posSize; // last rendered size in DIPs; zero until first layout
     private int _posTries;
+    private bool _faded;   // fade-in already kicked off for the current show
 
-    private void PositionWhenReady(double waLeft, double waWidth, double waBottom)
+    private void Position(Size size, double waLeft, double waWidth, double waBottom)
     {
-        if (!IsShowing) return; // user released Ctrl before layout settled
-        if (ActualWidth <= 0 || ActualHeight <= 0)
-        {
-            if (_posTries++ < 20)
-                Dispatcher.BeginInvoke(new Action(() => PositionWhenReady(waLeft, waWidth, waBottom)),
-                    DispatcherPriority.Render);
-            else
-                Log.Error("overlay position: layout never produced a size");
-            return;
-        }
-        double w = ActualWidth, h = ActualHeight;
+        double w = size.Width, h = size.Height;
         double scale = Math.Min(1.0, waWidth * 0.75 / w);
         if (scale < 1.0)
         {
@@ -246,13 +247,47 @@ public partial class OverlayWindow : Window
         }
         Left = waLeft + (waWidth - w) / 2;
         Top = waBottom - h - 40;
-        Log.Info($"overlay pos: L={Left:F0} T={Top:F0} size={w:F0}x{h:F0}");
-        FadeTo(_settings.Opacity);
     }
 
-    // Note: no render prewarm — a hidden/offscreen warm-up breaks WPF layout
-    // (visual tree never arranges) and a visible one flashes on screen. First
-    // show costs ~300ms once; the hook watchdog heals any missed key-up.
+    private void PositionWhenReady(double waLeft, double waWidth, double waBottom)
+    {
+        if (!IsShowing) return; // user released before layout settled
+        if (ActualWidth <= 0 || ActualHeight <= 0)
+        {
+            if (_posTries++ < 20)
+                Dispatcher.BeginInvoke(new Action(() => PositionWhenReady(waLeft, waWidth, waBottom)),
+                    DispatcherPriority.Render);
+            else
+                Log.Error("overlay position: layout never produced a size");
+            return;
+        }
+        _posSize = new Size(ActualWidth, ActualHeight);
+        Position(_posSize, waLeft, waWidth, waBottom);
+        Log.Info($"overlay pos: L={Left:F0} T={Top:F0} size={ActualWidth:F0}x{ActualHeight:F0}");
+        if (!_faded) FadeTo(_settings.Opacity);
+    }
+
+    /// <summary>Materialize hwnd + fonts + render pipeline once at startup via
+    /// an imperceptible 1px transparent show — first real trigger is then warm.
+    /// Must not be offscreen (that poisons WPF composition).</summary>
+    public void Prewarm()
+    {
+        Width = 1; Height = 1;
+        Left = SystemParameters.WorkArea.Right - 2;
+        Top = SystemParameters.WorkArea.Bottom - 2;
+        RootBorder.Opacity = 0;
+        Visibility = Visibility.Visible;
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            if (IsShowing) return; // a real trigger already took over
+            Visibility = Visibility.Collapsed;
+            Width = double.NaN; Height = double.NaN;
+            if (ActualWidth > 0) _posSize = new Size(ActualWidth, ActualHeight);
+        };
+        t.Start();
+    }
 
     public void HideOverlay()
     {
@@ -293,11 +328,11 @@ public partial class OverlayWindow : Window
     private void FadeTo(double target)
     {
         int token = ++_animToken;
-        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(180)));
-        // Win11 flyout-style rise: slide up 14px while fading in.
-        _slide.Y = 14;
+        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(110)));
+        // Win11 flyout-style rise: slide up slightly while fading in.
+        _slide.Y = 10;
         _slide.BeginAnimation(TranslateTransform.YProperty,
-            new DoubleAnimation(0, TimeSpan.FromMilliseconds(240))
+            new DoubleAnimation(0, TimeSpan.FromMilliseconds(150))
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             });
