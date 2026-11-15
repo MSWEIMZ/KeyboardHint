@@ -10,6 +10,7 @@ namespace KeyboardHint;
 public partial class App : System.Windows.Application
 {
     private Mutex? _mutex;
+    private bool _mutexOwned;
     private KeyboardHook? _hook;
     private MouseHook? _mouseHook;
     private ModifierHoldTrigger? _trigger;
@@ -26,11 +27,17 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
+        _mutexOwned = true;
 
         Log.Init();
         Log.Info("=== KeyboardHint starting ===");
 
         var settings = AppSettings.Load();
+        // Broken GPU pipelines (driver/D3D state) leave every WPF window
+        // composited blank; software rendering is deterministic for a small
+        // overlay. Must be set before the first window is shown.
+        if (!string.Equals(settings.RenderMode, "hardware", StringComparison.OrdinalIgnoreCase))
+            System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         var store = ProfileStore.Load();
         _overlay = new OverlayWindow(settings);
         _trigger = new ModifierHoldTrigger(settings, store, _overlay);
@@ -61,7 +68,7 @@ public partial class App : System.Windows.Application
         _hook?.Dispose();
         _mouseHook?.Dispose();
         _overlay?.ForceClose();
-        _mutex?.ReleaseMutex();
+        if (_mutexOwned) _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         Log.Info("=== KeyboardHint exited ===");
         base.OnExit(e);

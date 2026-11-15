@@ -31,6 +31,12 @@ public class AppSettings
     /// tap the trigger key again or click anywhere to dismiss.</summary>
     public bool StayOnRelease { get; set; }
 
+    /// <summary>"software" (default) or "hardware". On machines where the GPU
+    /// pipeline produces no output (driver/broken D3D state), hardware mode
+    /// leaves every WPF window blank — software rendering is the safe default
+    /// for this small overlay. Takes effect on next start.</summary>
+    public string RenderMode { get; set; } = "software";
+
     /// <summary>Modifier triggers: ctrl / alt / win / shift.</summary>
     public Dictionary<string, TriggerCfg> Triggers { get; set; } = new()
     {

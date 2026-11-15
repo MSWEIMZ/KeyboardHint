@@ -116,6 +116,7 @@
   "delayMs": 400,
   "opacity": 0.92,
   "stayOnRelease": false,
+  "renderMode": "software",
   "triggers": {
     "ctrl":  { "enabled": true },
     "alt":   { "enabled": true, "suppressRelease": true },
@@ -130,6 +131,7 @@
 - `triggers`：每个修饰键独立开关；`suppressRelease` = 按住时注入 F24 哑键，松开不算单独按键（Win 防开始菜单、Alt 防菜单栏抢焦点）
 - `stayOnRelease`：钉住模式，松开后保持显示，再按一次触发键关闭
 - `opacity`：键盘整体不透明度 0–1
+- `renderMode`：`software`（默认）或 `hardware`。GPU/D3D 管线异常的机器上硬件渲染会让所有 WPF 窗口完全不绘制（窗口存在但内容空白）；软件渲染对这种小弹窗无性能差别且稳定。改完需重启
 - `excludedProcesses`：永不弹出的进程名列表
 
 ## 构建
