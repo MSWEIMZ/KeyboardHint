@@ -1,0 +1,25 @@
+{
+  "id": "audition",
+  "displayName": "Audition",
+  "processes": ["Adobe Audition", "Audition"],
+  "layers": {
+    "ctrl": {
+      "N": "新建文件",
+      "O": "打开",
+      "S": "保存",
+      "I": "导入",
+      "Z": "撤销",
+      "X": "剪切",
+      "C": "复制",
+      "V": "粘贴",
+      "A": "全选",
+      "W": "关闭"
+    },
+    "ctrl+shift": {
+      "Z": "重做",
+      "S": "另存为",
+      "V": "混合粘贴",
+      "A": "取消选择"
+    }
+  }
+}

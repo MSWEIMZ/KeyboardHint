@@ -1,0 +1,18 @@
+{
+  "id": "finalshell",
+  "displayName": "FinalShell",
+  "processes": ["finalshell"],
+  "layers": {
+    "ctrl": {
+      "N": "新建会话",
+      "T": "新建标签",
+      "W": "关闭标签",
+      "D1": "标签1",
+      "D2": "标签2",
+      "D3": "标签3"
+    },
+    "ctrl+shift": {
+      "F": "搜索终端"
+    }
+  }
+}

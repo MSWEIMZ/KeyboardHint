@@ -1,0 +1,33 @@
+{
+  "id": "mobaxterm",
+  "displayName": "MobaXterm",
+  "processes": ["MobaXterm"],
+  "layers": {
+    "ctrl": {
+      "Tab": "切换标签"
+    },
+    "ctrl+shift": {
+      "N": "新建会话",
+      "Q": "快速连接",
+      "U": "复制标签",
+      "B": "侧边栏",
+      "S": "保存输出",
+      "F": "查找",
+      "X": "X服务器",
+      "Tab": "反向切标签"
+    },
+    "ctrl+alt": {
+      "T": "新建终端",
+      "Q": "关闭标签",
+      "Left": "上一标签",
+      "Right": "下一标签",
+      "D2": "垂直分屏",
+      "D3": "水平分屏"
+    },
+    "shift": {
+      "Ins": "粘贴",
+      "PgUp": "向上翻页",
+      "PgDn": "向下翻页"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "teamviewer",
+  "displayName": "TeamViewer",
+  "processes": ["TeamViewer"],
+  "layers": {
+    "ctrl": {
+      "Back": "驱动器列表"
+    },
+    "alt": {
+      "F4": "结束会话"
+    }
+  }
+}

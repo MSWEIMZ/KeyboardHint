@@ -1,0 +1,33 @@
+{
+  "id": "dbeaver",
+  "displayName": "DBeaver",
+  "processes": ["dbeaver"],
+  "layers": {
+    "ctrl": {
+      "Enter": "执行语句",
+      "Space": "代码补全",
+      "S": "保存脚本",
+      "F": "查找",
+      "Oem2": "注释切换",
+      "Oem6": "新建脚本",
+      "D9": "选择连接",
+      "D0": "选择模式",
+      "PgUp": "上一标签",
+      "PgDn": "下一标签"
+    },
+    "ctrl+shift": {
+      "N": "新建连接",
+      "F": "格式化SQL",
+      "D": "数据库对象"
+    },
+    "ctrl+alt": {
+      "Enter": "SQL控制台",
+      "Ins": "复制行"
+    },
+    "alt": {
+      "X": "执行脚本",
+      "Ins": "新增行",
+      "Del": "删除行"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "sunlogin",
+  "displayName": "向日葵",
+  "processes": ["SunloginClient"],
+  "layers": {
+    "ctrl+alt": {
+      "Del": "安全选项",
+      "Up": "全屏",
+      "Down": "退出全屏",
+      "Left": "切换屏幕",
+      "Right": "切换屏幕",
+      "Home": "唤醒屏幕",
+      "P": "黑屏模式",
+      "Space": "指针显隐",
+      "S": "屏幕截图",
+      "D1": "流畅画质",
+      "D2": "高清画质",
+      "D3": "超清画质"
+    }
+  }
+}

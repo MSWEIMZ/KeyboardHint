@@ -1,0 +1,35 @@
+{
+  "id": "sumatrapdf",
+  "displayName": "SumatraPDF",
+  "processes": ["SumatraPDF"],
+  "layers": {
+    "ctrl": {
+      "N": "新窗口",
+      "O": "打开",
+      "W": "关闭",
+      "S": "另存为",
+      "P": "打印",
+      "D": "属性",
+      "Q": "退出",
+      "F": "查找",
+      "G": "转到页",
+      "L": "演示模式",
+      "C": "复制",
+      "D6": "单页视图",
+      "D7": "对页视图",
+      "D8": "书籍视图"
+    },
+    "ctrl+shift": {
+      "L": "全屏",
+      "OemMinus": "左旋",
+      "OemPlus": "右旋",
+      "Right": "下一文档",
+      "Left": "上一文档"
+    },
+    "alt": {
+      "Left": "后退",
+      "Right": "前进",
+      "F4": "退出"
+    }
+  }
+}

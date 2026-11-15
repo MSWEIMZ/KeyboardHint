@@ -1,0 +1,15 @@
+{
+  "id": "wemeet",
+  "displayName": "腾讯会议",
+  "processes": [
+    "wemeetapp"
+  ],
+  "layers": {
+    "alt": {
+      "M": "静音",
+      "V": "视频",
+      "S": "屏幕共享",
+      "C": "云录制"
+    }
+  }
+}

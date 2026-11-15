@@ -1,0 +1,17 @@
+{
+  "id": "tim",
+  "displayName": "TIM",
+  "processes": ["TIM"],
+  "layers": {
+    "ctrl": {
+      "Enter": "发送消息"
+    },
+    "ctrl+alt": {
+      "A": "截图", "Z": "提取消息", "L": "锁定TIM",
+      "O": "屏幕识图", "S": "屏幕录制", "F": "屏幕翻译"
+    },
+    "alt": {
+      "C": "关闭会话"
+    }
+  }
+}

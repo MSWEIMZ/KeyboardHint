@@ -1,0 +1,18 @@
+{
+  "id": "telegram",
+  "displayName": "Telegram",
+  "processes": ["Telegram"],
+  "layers": {
+    "ctrl": {
+      "F": "搜索", "N": "新建会话", "K": "搜索会话",
+      "L": "锁定", "OemComma": "设置", "Up": "回复",
+      "W": "关闭标签"
+    },
+    "ctrl+shift": {
+      "M": "静音", "X": "无痕剪切"
+    },
+    "alt": {
+      "Up": "上一会话", "Down": "下一会话"
+    }
+  }
+}

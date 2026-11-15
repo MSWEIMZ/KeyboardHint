@@ -1,0 +1,17 @@
+{
+  "id": "baidunetdisk",
+  "displayName": "百度网盘",
+  "processes": ["baidunetdisk"],
+  "layers": {
+    "ctrl": {
+      "A": "全选",
+      "F": "搜索",
+      "N": "新建文件夹",
+      "U": "上传",
+      "D": "下载"
+    },
+    "alt": {
+      "F4": "关闭窗口"
+    }
+  }
+}

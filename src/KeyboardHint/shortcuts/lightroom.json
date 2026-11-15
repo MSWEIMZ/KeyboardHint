@@ -1,0 +1,31 @@
+{
+  "id": "lightroom",
+  "displayName": "Lightroom Classic",
+  "processes": ["Lightroom"],
+  "layers": {
+    "ctrl": {
+      "N": "新建收藏",
+      "E": "外部编辑",
+      "S": "保存元数据",
+      "Z": "撤销",
+      "A": "全选",
+      "D": "取消选择",
+      "G": "堆叠",
+      "J": "视图选项",
+      "OemComma": "首选项"
+    },
+    "ctrl+shift": {
+      "I": "导入照片",
+      "E": "导出",
+      "Z": "重做",
+      "G": "取消堆叠",
+      "S": "同步设置",
+      "C": "复制设置",
+      "V": "粘贴设置"
+    },
+    "ctrl+alt": {
+      "V": "粘贴上次",
+      "OemComma": "目录设置"
+    }
+  }
+}

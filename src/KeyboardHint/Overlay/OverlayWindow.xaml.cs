@@ -328,7 +328,7 @@ public partial class OverlayWindow : Window
     private void FadeTo(double target)
     {
         int token = ++_animToken;
-        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(110)));
+        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(80)));
         // Win11 flyout-style rise: slide up slightly while fading in.
         _slide.Y = 10;
         _slide.BeginAnimation(TranslateTransform.YProperty,

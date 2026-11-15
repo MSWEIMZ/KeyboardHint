@@ -1,0 +1,22 @@
+{
+  "id": "canva",
+  "displayName": "Canva",
+  "processes": ["Canva"],
+  "layers": {
+    "ctrl": {
+      "Z": "撤销", "X": "剪切", "C": "复制", "V": "粘贴",
+      "D": "创建副本", "G": "编组", "A": "全选", "S": "保存",
+      "Enter": "新建页面", "Oem4": "下移一层", "Oem6": "上移一层"
+    },
+    "ctrl+shift": {
+      "Z": "重做", "G": "解组", "D0": "适应画布",
+      "OemPeriod": "增大字号", "OemComma": "减小字号"
+    },
+    "ctrl+alt": {
+      "Oem4": "置于底层", "Oem6": "置于顶层"
+    },
+    "alt+shift": {
+      "L": "锁定元素", "T": "整理排列"
+    }
+  }
+}

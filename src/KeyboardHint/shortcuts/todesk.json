@@ -1,0 +1,15 @@
+{
+  "id": "todesk",
+  "displayName": "ToDesk",
+  "processes": ["ToDesk"],
+  "layers": {
+    "ctrl+shift": {
+      "D": "切换屏幕",
+      "W": "全屏切换",
+      "D1": "远程鼠标"
+    },
+    "alt+shift": {
+      "Z": "锁定鼠标"
+    }
+  }
+}

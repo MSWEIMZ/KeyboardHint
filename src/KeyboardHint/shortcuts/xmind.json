@@ -1,0 +1,23 @@
+{
+  "id": "xmind",
+  "displayName": "XMind",
+  "processes": ["XMind"],
+  "layers": {
+    "ctrl": {
+      "O": "打开", "S": "保存", "Z": "撤销",
+      "Y": "重做", "F": "查找替换", "Enter": "父主题",
+      "I": "插图", "H": "超链接", "B": "外框",
+      "L": "联系线", "Oem6": "概要",
+      "OemPlus": "放大", "OemMinus": "缩小"
+    },
+    "ctrl+shift": {
+      "N": "新建脑图", "S": "全部保存", "W": "关闭全部"
+    },
+    "alt": {
+      "Enter": "属性", "Up": "上移主题", "Down": "下移主题"
+    },
+    "shift": {
+      "Enter": "前插主题"
+    }
+  }
+}

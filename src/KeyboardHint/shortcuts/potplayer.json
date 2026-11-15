@@ -1,0 +1,33 @@
+{
+  "id": "potplayer",
+  "displayName": "PotPlayer",
+  "processes": ["PotPlayerMini64", "PotPlayerMini", "PotPlayer64", "PotPlayer"],
+  "layers": {
+    "ctrl": {
+      "O": "打开文件",
+      "U": "打开链接",
+      "C": "截图复制",
+      "E": "截图保存",
+      "G": "连续截图",
+      "Y": "重开文件",
+      "Right": "快进30秒",
+      "Left": "快退30秒"
+    },
+    "ctrl+shift": {
+      "Right": "下一关键帧",
+      "Left": "上一关键帧",
+      "Del": "删除文件"
+    },
+    "ctrl+alt": {
+      "Right": "快进5分",
+      "Left": "快退5分",
+      "Y": "重载字幕"
+    },
+    "alt": {
+      "C": "录像",
+      "K": "旋转视频",
+      "O": "载入字幕",
+      "H": "字幕开关"
+    }
+  }
+}

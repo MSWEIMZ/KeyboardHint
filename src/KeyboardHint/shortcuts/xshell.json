@@ -1,0 +1,35 @@
+{
+  "id": "xshell",
+  "displayName": "Xshell",
+  "processes": ["Xshell"],
+  "layers": {
+    "ctrl": {
+      "Tab": "下一标签",
+      "Ins": "复制"
+    },
+    "ctrl+shift": {
+      "Tab": "上一标签",
+      "F4": "关闭标签",
+      "R": "重连",
+      "L": "清屏"
+    },
+    "ctrl+alt": {
+      "T": "新建终端",
+      "F": "文件传输"
+    },
+    "alt": {
+      "N": "新建会话",
+      "O": "打开会话",
+      "C": "断开连接",
+      "D": "地址栏",
+      "Enter": "全屏",
+      "Left": "上一标签",
+      "Right": "下一标签"
+    },
+    "shift": {
+      "PgUp": "向上翻页",
+      "PgDn": "向下翻页",
+      "Ins": "粘贴"
+    }
+  }
+}

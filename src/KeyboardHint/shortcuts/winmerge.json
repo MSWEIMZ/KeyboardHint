@@ -1,0 +1,31 @@
+{
+  "id": "winmerge",
+  "displayName": "WinMerge",
+  "processes": ["WinMergeU"],
+  "layers": {
+    "ctrl": {
+      "O": "打开",
+      "S": "保存",
+      "F": "查找",
+      "G": "转到"
+    },
+    "ctrl+alt": {
+      "Left": "复制左并进",
+      "Right": "复制右并进"
+    },
+    "alt": {
+      "Up": "上一差异",
+      "Down": "下一差异",
+      "Left": "复制到左",
+      "Right": "复制到右",
+      "Home": "第一差异",
+      "End": "最后差异",
+      "Enter": "当前差异",
+      "F4": "关闭"
+    },
+    "alt+shift": {
+      "Up": "上一冲突",
+      "Down": "下一冲突"
+    }
+  }
+}

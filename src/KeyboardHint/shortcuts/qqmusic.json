@@ -1,0 +1,26 @@
+{
+  "id": "qqmusic",
+  "displayName": "QQ音乐",
+  "processes": ["QQMusic"],
+  "layers": {
+    "ctrl": {
+      "Left": "快退",
+      "Right": "快进"
+    },
+    "ctrl+alt": {
+      "F5": "播放暂停",
+      "Left": "上一首",
+      "Right": "下一首",
+      "Up": "音量增大",
+      "Down": "音量减小",
+      "V": "添加喜欢",
+      "W": "桌面歌词",
+      "E": "锁定歌词",
+      "Q": "界面开关",
+      "C": "精简模式"
+    },
+    "alt+shift": {
+      "S": "听歌识曲"
+    }
+  }
+}

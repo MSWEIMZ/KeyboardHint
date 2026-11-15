@@ -49,7 +49,7 @@
 | `msoffice-word.json` | `winword` | Word |
 | `msoffice-excel.json` | `excel` | Excel |
 | `msoffice-ppt.json` | `powerpnt` | PowerPoint |
-| `browser.json` | `chrome` `msedge` `firefox` `brave` `vivaldi` `opera` `360chrome` `qqbrowser` `2345explorer` | 浏览器 |
+| `browser.json` | `chrome` `2345explorer` `theworld` `liebao` `maxthon` `ucbrowser` | Chromium 系浏览器（兜底） |
 | `vscode.json` | `code` | VS Code |
 | `visualstudio.json` | `devenv` | Visual Studio |
 | `jetbrains.json` | `idea64` `pycharm64` `webstorm64` `goland64` `clion64` `rider64` `datagrip64` `phpstorm64` `studio64` `rubymine64` 等 | JetBrains 全家桶 / Android Studio |
@@ -66,6 +66,21 @@
 | `photoshop.json` | `photoshop` | Photoshop |
 | `obsidian.json` | `obsidian` | Obsidian |
 | `notion.json` | `notion` | Notion |
+
+**另内置 86 个应用专属配置**（合计 111 个 profile、约 2700 条快捷键）：
+
+| 分类 | 应用 |
+|---|---|
+| 浏览器 | Edge、Firefox、Opera、Vivaldi、Brave、QQ浏览器、360安全浏览器、360极速浏览器、搜狗浏览器 |
+| 开发工具 | Eclipse、NetBeans、Cursor、Atom、Zed、HBuilderX、Godot、Unity |
+| 终端/数据库/网络 | Xshell、MobaXterm、FinalShell、Tabby、SecureCRT、Postman、Navicat、DBeaver、FileZilla |
+| 办公/笔记/邮箱 | Outlook、OneNote、Typora、思源笔记、有道云笔记、印象笔记、XMind、Foxmail |
+| Adobe/剪辑/图形 | Premiere、After Effects、Illustrator、Lightroom、Audition、DaVinci Resolve、Blender、GIMP |
+| UI设计/原型 | Figma、Axure、MasterGo、Pixso、Canva、Adobe XD、Filmora、Clip Studio Paint |
+| IM/会议协作 | Teams、Slack、Discord、Telegram、TIM、Zoom、腾讯会议、Skype |
+| 播放器/录制/音频 | PotPlayer、VLC、MPC-HC、OBS、Bandicam、Audacity、网易云音乐、QQ音乐、foobar2000 |
+| 效率/文件/截图 | Snipaste、PixPin、ShareX、Everything、Total Commander、Directory Opus、XYplorer、Beyond Compare、WinMerge |
+| PDF/远程/下载 | Acrobat、福昕PDF、SumatraPDF、ToDesk、TeamViewer、AnyDesk、向日葵、远程桌面、百度网盘、迅雷 |
 
 层数据：`default.json` 带 `ctrl`/`ctrl+shift`/`alt`/`alt+shift`/`shift`/`win`/`win+ctrl`/`win+shift` 八层（win/alt 为系统级，**所有应用自动继承**——应用没定义某层时回落到 default 的同层）；应用配置普遍带 `ctrl`/`ctrl+shift`/`ctrl+alt`，浏览器/资源管理器/Office/WPS 等带应用专属 `alt` 层（含功能区 KeyTips）。
 
@@ -113,21 +128,21 @@
 ```json
 {
   "enabled": true,
-  "delayMs": 280,
+  "delayMs": 200,
   "opacity": 0.92,
   "stayOnRelease": false,
   "renderMode": "software",
   "triggers": {
     "ctrl":  { "enabled": true },
     "alt":   { "enabled": true, "suppressRelease": true },
-    "win":   { "enabled": true, "delayMs": 450, "suppressRelease": true },
+    "win":   { "enabled": true, "delayMs": 350, "suppressRelease": true },
     "shift": { "enabled": false }
   },
   "excludedProcesses": ["game1", "game2"]
 }
 ```
 
-- `delayMs`：按住修饰键多久后弹出（150ms 起，默认 280ms）；`triggers.*.delayMs` 可给某个键单独设（Win 默认 450ms 防误触）
+- `delayMs`：按住修饰键多久后弹出（150ms 起，默认 200ms）；`triggers.*.delayMs` 可给某个键单独设（Win 默认 350ms 防误触）
 - `triggers`：每个修饰键独立开关；`suppressRelease` = 按住时注入 F24 哑键，松开不算单独按键（Win 防开始菜单、Alt 防菜单栏抢焦点）
 - `stayOnRelease`：钉住模式，松开后保持显示，再按一次触发键关闭
 - `opacity`：键盘整体不透明度 0–1

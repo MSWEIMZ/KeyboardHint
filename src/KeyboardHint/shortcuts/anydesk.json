@@ -1,0 +1,24 @@
+{
+  "id": "anydesk",
+  "displayName": "AnyDesk",
+  "processes": ["AnyDesk"],
+  "layers": {
+    "ctrl+alt+shift": {
+      "Enter": "全屏切换",
+      "S": "声音开关",
+      "I": "输入权限",
+      "P": "保存截图",
+      "M": "指针显隐",
+      "C": "聊天",
+      "Del": "安全选项",
+      "Left": "切换屏幕",
+      "Right": "切换屏幕",
+      "F2": "原始视图",
+      "F3": "缩小视图",
+      "F4": "拉伸视图"
+    },
+    "alt": {
+      "F4": "断开连接"
+    }
+  }
+}

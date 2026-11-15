@@ -1,0 +1,22 @@
+{
+  "id": "csp",
+  "displayName": "Clip Studio Paint",
+  "processes": ["CLIPStudioPaint", "CLIPStudioPaint64"],
+  "layers": {
+    "ctrl": {
+      "Z": "撤销", "Y": "重做", "C": "复制", "V": "粘贴",
+      "A": "全选", "D": "取消选区", "T": "缩放旋转", "U": "色相饱和",
+      "E": "向下合并", "G": "图层编组", "S": "保存"
+    },
+    "ctrl+shift": {
+      "S": "另存为", "N": "新建图层", "T": "自由变换", "I": "反选",
+      "E": "合并可见"
+    },
+    "ctrl+alt": {
+      "G": "剪贴蒙版"
+    },
+    "alt": {
+      "Del": "填充", "Oem4": "选中下层", "Oem6": "选中上层"
+    }
+  }
+}

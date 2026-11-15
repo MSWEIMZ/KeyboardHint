@@ -1,0 +1,18 @@
+{
+  "id": "mstsc",
+  "displayName": "远程桌面",
+  "processes": ["mstsc"],
+  "layers": {
+    "ctrl+alt": {
+      "Home": "连接栏",
+      "End": "安全选项"
+    },
+    "alt": {
+      "PgUp": "向右切换",
+      "PgDn": "向左切换",
+      "Ins": "循环切换",
+      "Home": "开始菜单",
+      "Del": "系统菜单"
+    }
+  }
+}

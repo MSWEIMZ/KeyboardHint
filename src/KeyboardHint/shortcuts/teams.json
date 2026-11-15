@@ -1,0 +1,21 @@
+{
+  "id": "teams",
+  "displayName": "Microsoft Teams",
+  "processes": ["ms-teams", "Teams"],
+  "layers": {
+    "ctrl": {
+      "E": "搜索", "N": "新聊天", "OemComma": "设置",
+      "OemPeriod": "快捷键列表", "OemPlus": "放大", "OemMinus": "缩小",
+      "D0": "重置缩放", "D1": "活动", "D2": "聊天",
+      "D3": "团队", "D4": "日历", "D5": "通话"
+    },
+    "ctrl+shift": {
+      "F": "筛选器", "X": "展开输入框", "M": "静音",
+      "O": "摄像头", "K": "举手", "E": "屏幕共享",
+      "A": "接听", "D": "拒绝"
+    },
+    "alt+shift": {
+      "N": "预定会议"
+    }
+  }
+}

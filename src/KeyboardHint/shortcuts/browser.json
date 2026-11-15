@@ -1,7 +1,7 @@
 {
   "id": "browser",
   "displayName": "浏览器",
-  "processes": ["chrome", "msedge", "firefox", "brave", "vivaldi", "opera", "360chrome", "qqbrowser", "2345explorer"],
+  "processes": ["chrome", "2345explorer", "theworld", "liebao", "Maxthon", "UCBrowser"],
   "layers": {
     "ctrl": {
       "T": "新标签页",
