@@ -70,7 +70,8 @@ public sealed class ModifierHoldTrigger : IDisposable
 
         // LL hooks can miss key-ups while the UI thread is busy — purge stale
         // tracked keys against physical state and hide if the trigger isn't held.
-        _watchdog = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        // Idle 时降到 1s 省电，按住键/显示中保持 300ms 快速清理。
+        _watchdog = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
         _watchdog.Tick += (_, _) =>
         {
             foreach (var vk in _down.ToList())
@@ -78,6 +79,9 @@ public sealed class ModifierHoldTrigger : IDisposable
             if (IsShowing() && !Enabled) HideAll();
             else if (IsShowing() && !_pinned && !TriggerPhysicallyDown(_activeTrigger)) HideAll();
             else if (IsShowing()) SwitchLayer(); // re-sync if a modifier key-up was lost
+            var busy = _down.Count > 0 || IsShowing() || _pendingTrigger != null;
+            var want = TimeSpan.FromMilliseconds(busy ? 300 : 1000);
+            if (_watchdog.Interval != want) _watchdog.Interval = want;
             if (_eventsSeen != _lastLoggedEvents)
             {
                 _lastLoggedEvents = _eventsSeen;
@@ -272,7 +276,7 @@ public sealed class ModifierHoldTrigger : IDisposable
         _overlay.HideOverlay();
     }
 
-    private bool IsShowing() => _overlay.IsShowing;
+    public bool IsShowing() => _overlay.IsShowing;
 
     private bool GroupHeld(string mod) => _down.Any(ModSets[mod].Contains);
 

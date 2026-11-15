@@ -19,6 +19,15 @@
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <DebugType>none</DebugType>
+    <!-- 体积优化：压缩单文件包内程序集 -->
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- 体积优化：不内嵌 ICU 全球化数据（仅枚举比较进程名，无需完整文化数据） -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- 体积优化：只保留英文卫星程序集 -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- 内存优化：后台常驻应用用低功耗 GC 模式 -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>

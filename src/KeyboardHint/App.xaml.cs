@@ -1,6 +1,8 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using KeyboardHint.Core;
+using KeyboardHint.Native;
 using KeyboardHint.Overlay;
 using KeyboardHint.Profiles;
 using KeyboardHint.Tray;
@@ -60,6 +62,18 @@ public partial class App : System.Windows.Application
         _trigger.Start();
         _tray = new TrayIcon(_trigger, store, settings);
         _overlay.Prewarm(); // 1px invisible show warms hwnd+fonts — first trigger is instant
+
+        // Tray apps sit idle most of their life: periodically hand managed
+        // garbage and trimmed pages back to the OS instead of holding a
+        // working set sized for the busiest moment.
+        var memTrim = new DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
+        memTrim.Tick += (_, _) =>
+        {
+            if (_trigger.IsShowing()) return;
+            GC.Collect(2, GCCollectionMode.Optimized, false);
+            Win32.EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
+        };
+        memTrim.Start();
     }
 
     protected override void OnExit(ExitEventArgs e)
