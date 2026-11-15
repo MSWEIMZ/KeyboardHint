@@ -15,23 +15,24 @@ namespace KeyboardHint.Overlay;
 
 public partial class OverlayWindow : Window
 {
-    // Fluent-style palette: borderless keys defined by luminance layers,
-    // Win11 accent blue (#60CDFF) for shortcut annotations.
-    private static readonly Brush KeyBg = new SolidColorBrush(Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF));
-    private static readonly Brush KeyEdge = new SolidColorBrush(Color.FromArgb(0x59, 0x00, 0x00, 0x00));
-    private static readonly Brush KeyLitBg = new SolidColorBrush(Color.FromArgb(0x26, 0x60, 0xCD, 0xFF));
-    private static readonly Brush KeyLitEdge = new SolidColorBrush(Color.FromArgb(0xA6, 0x60, 0xCD, 0xFF));
-    private static readonly Brush KeyFlashBg = new SolidColorBrush(Color.FromArgb(0x4D, 0x60, 0xCD, 0xFF));
-    private static readonly Brush ModBg = new SolidColorBrush(Color.FromRgb(0x0F, 0x6C, 0xBD));
-    private static readonly Brush ModEdge = new SolidColorBrush(Color.FromRgb(0x60, 0xCD, 0xFF));
-    private static readonly Brush TextMain = new SolidColorBrush(Color.FromArgb(0xF2, 0xFF, 0xFF, 0xFF));
-    private static readonly Brush TextAccent = new SolidColorBrush(Color.FromRgb(0x7C, 0xD1, 0xFF));
+    // Palette built from settings (theme + accent) — see ApplyTheme().
+    private Brush KeyBg = null!;
+    private Brush KeyEdge = null!;
+    private Brush KeyLitBg = null!;
+    private Brush KeyLitEdge = null!;
+    private Brush KeyFlashBg = null!;
+    private Brush ModBg = null!;
+    private Brush ModEdge = null!;
+    private Brush TextMain = null!;
+    private Brush TextAccent = null!;
+    private Brush _windowFallback = null!; // used when DWM backdrop is unavailable
     private static readonly FontFamily UiFont = new("Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI");
 
     private sealed class KeyVisual
     {
         public required Border Border { get; init; }
         public required TextBlock Shortcut { get; init; }
+        public required TextBlock Legend { get; init; }
     }
 
     private readonly AppSettings _settings;
@@ -47,9 +48,60 @@ public partial class OverlayWindow : Window
     {
         _settings = settings;
         InitializeComponent();
+        ApplyTheme(); // brushes must exist before BuildKeyboard uses them
         System.Windows.Documents.TextElement.SetFontFamily(RootBorder, UiFont);
         RootBorder.RenderTransform = _slide;
         BuildKeyboard();
+    }
+
+    /// <summary>Rebuild the palette from settings.Theme + settings.Accent and
+    /// recolor the panel and every key. Safe to call live (settings save).</summary>
+    public void ApplyTheme()
+    {
+        bool dark = !string.Equals(_settings.Theme, "light", StringComparison.OrdinalIgnoreCase);
+        Color accent;
+        try { accent = (Color)System.Windows.Media.ColorConverter.ConvertFromString(_settings.Accent); }
+        catch { accent = Color.FromRgb(0x60, 0xCD, 0xFF); }
+
+        static Color Shade(Color c, double f) => Color.FromRgb(
+            (byte)(c.R * f), (byte)(c.G * f), (byte)(c.B * f));
+        static Color Tint(Color c, double f) => Color.FromRgb(
+            (byte)(c.R + (255 - c.R) * f), (byte)(c.G + (255 - c.G) * f), (byte)(c.B + (255 - c.B) * f));
+        static Brush A(byte a, Color c) => new SolidColorBrush(Color.FromArgb(a, c.R, c.G, c.B));
+
+        _windowFallback = new SolidColorBrush(dark ? Color.FromRgb(0x14, 0x14, 0x18) : Color.FromRgb(0xF6, 0xF8, 0xFA));
+        RootBorder.Background = new SolidColorBrush(dark ? Color.FromArgb(0xC0, 0x14, 0x14, 0x18) : Color.FromArgb(0xD8, 0xF7, 0xF9, 0xFC));
+        RootBorder.BorderBrush = new SolidColorBrush(dark ? Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0x1A, 0x00, 0x00, 0x00));
+        Caption.Foreground = new SolidColorBrush(dark ? Color.FromArgb(0xB8, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0xA6, 0x1B, 0x1B, 0x1F));
+
+        KeyBg = dark ? new SolidColorBrush(Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF))
+                     : new SolidColorBrush(Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF));
+        KeyEdge = new SolidColorBrush(dark ? Color.FromArgb(0x59, 0x00, 0x00, 0x00)
+                                           : Color.FromArgb(0x30, 0x00, 0x00, 0x00));
+        KeyLitBg = A(0x26, accent);
+        KeyLitEdge = A(0xA6, accent);
+        KeyFlashBg = A(0x4D, accent);
+        ModBg = new SolidColorBrush(Shade(accent, 0.5)); // dark enough for white legend
+        ModEdge = new SolidColorBrush(dark ? accent : Shade(accent, 0.7));
+        TextMain = new SolidColorBrush(dark ? Color.FromArgb(0xF2, 0xFF, 0xFF, 0xFF)
+                                            : Color.FromArgb(0xF2, 0x1B, 0x1B, 0x1F));
+        TextAccent = new SolidColorBrush(dark ? Tint(accent, 0.2) : Shade(accent, 0.55));
+
+        // Window background is only a fallback — the DWM acrylic backdrop
+        // replaces it visually once applied, so don't fight transparency.
+        if (Background != System.Windows.Media.Brushes.Transparent)
+            Background = _windowFallback;
+
+        if (_keys.Count > 0)
+        {
+            foreach (var kv in _keys.Values)
+            {
+                kv.Legend.Foreground = TextMain;
+                kv.Shortcut.Foreground = TextAccent;
+            }
+            if (_lastProfile != null && _lastLayer != null)
+                SetLayer(_lastProfile, _lastLayerName, _lastLayer); // restores lit/mod colors
+        }
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -63,8 +115,9 @@ public partial class OverlayWindow : Window
         int hr = Native.Win32.DwmSetWindowAttribute(hwnd, Native.Win32.DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
         // Only go transparent where the backdrop actually applied — on older
         // Windows a transparent opaque window renders solid black.
-        if (hr == 0)
-            Background = System.Windows.Media.Brushes.Transparent;
+        Background = hr == 0
+            ? System.Windows.Media.Brushes.Transparent
+            : _windowFallback;
     }
 
     private void BuildKeyboard()
@@ -133,7 +186,7 @@ public partial class OverlayWindow : Window
                     Child = grid
                 };
                 rowPanel.Children.Add(border);
-                _keys[def.Id] = new KeyVisual { Border = border, Shortcut = shortcut };
+                _keys[def.Id] = new KeyVisual { Border = border, Shortcut = shortcut, Legend = legend };
             }
             KeyboardPanel.Children.Add(rowPanel);
         }

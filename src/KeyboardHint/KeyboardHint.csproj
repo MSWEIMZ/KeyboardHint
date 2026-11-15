@@ -15,7 +15,8 @@
     <AssemblyTitle>键盘小助手</AssemblyTitle>
     <Description>按住 Ctrl 弹出当前应用的快捷键提示键盘</Description>
     <PublishSingleFile>true</PublishSingleFile>
-    <!-- 不打包原生库到单文件：避免运行时向 %TEMP% 解包（磁盘紧张环境也能直接跑） -->
+    <!-- 原生库也打进单文件：发布产物 = 一个 exe，双击即用 -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <DebugType>none</DebugType>
@@ -33,10 +34,15 @@
   <ItemGroup>
     <None Update="settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
     <None Update="shortcuts\**\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
+    <!-- 快捷键配置内嵌进 exe：单文件分发时无需附带 shortcuts 目录；
+         exe 旁 shortcuts\ 目录存在时仍然优先（开发/便携模式），用户目录覆盖一切 -->
+    <EmbeddedResource Include="shortcuts\**\*.json" />
   </ItemGroup>
 
 </Project>

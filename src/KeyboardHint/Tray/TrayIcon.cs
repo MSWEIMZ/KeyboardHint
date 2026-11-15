@@ -13,7 +13,8 @@ public sealed class TrayIcon : IDisposable
     private readonly NotifyIcon _icon;
     private readonly ToolStripMenuItem _enabledItem;
 
-    public TrayIcon(ModifierHoldTrigger trigger, ProfileStore store, AppSettings settings)
+    public TrayIcon(ModifierHoldTrigger trigger, ProfileStore store, AppSettings settings,
+                    KeyboardHint.Overlay.OverlayWindow overlay)
     {
         _enabledItem = new ToolStripMenuItem("已启用（按住修饰键显示快捷键）")
         {
@@ -80,10 +81,11 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(pinItem);
         menu.Items.Add(new ToolStripMenuItem("设置…", null, (_, _) =>
         {
-            var w = new KeyboardHint.Overlay.SettingsWindow(settings, store, trigger);
+            var w = new KeyboardHint.Overlay.SettingsWindow(settings, store, trigger, overlay);
             w.ShowDialog();
         }));
         menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(new ToolStripMenuItem("自定义当前应用快捷键…", null, (_, _) => CustomizeCurrentApp(store)));
         menu.Items.Add(new ToolStripMenuItem("打开配置/快捷键目录", null, (_, _) => OpenConfigDir()));
         menu.Items.Add(new ToolStripMenuItem("重新加载快捷键配置", null, (_, _) =>
         {
@@ -114,6 +116,44 @@ public sealed class TrayIcon : IDisposable
                 "在任意应用中按住 Ctrl、Alt 或 Win 键约半秒，\n屏幕底部会弹出当前应用的快捷键键盘。\n右键托盘图标可设置触发键和延迟。",
                 ToolTipIcon.Info);
         }
+    }
+
+    /// <summary>Export the current foreground app's profile to the user dir
+    /// (or create a fresh one pre-filled with its process name), then open it
+    /// in notepad for editing. User-dir files override bundled ones.</summary>
+    private static void CustomizeCurrentApp(ProfileStore store)
+    {
+        try
+        {
+            var ctx = ForegroundApp.Capture();
+            var profile = store.Resolve(ctx.ProcessName);
+            var dir = Path.Combine(Log.UserDir, "shortcuts");
+            Directory.CreateDirectory(dir);
+
+            ShortcutProfile toWrite = profile;
+            var id = profile.Id;
+            // Unknown app → start a NEW profile pre-matched to this process
+            // (editing default.json's copy wouldn't match anything useful).
+            if (id == "default" && !string.IsNullOrEmpty(ctx.ProcessName))
+            {
+                id = ctx.ProcessName.ToLowerInvariant();
+                toWrite = new ShortcutProfile
+                {
+                    Id = id,
+                    DisplayName = ctx.ProcessName,
+                    Processes = new List<string> { id },
+                    Layers = new Dictionary<string, Dictionary<string, string>>(profile.Layers)
+                };
+            }
+            var path = Path.Combine(dir, id + ".json");
+            if (!File.Exists(path))
+                File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(toWrite,
+                    new System.Text.Json.JsonSerializerOptions(AppSettings.JsonOpts()) { WriteIndented = true }));
+            Process.Start(new ProcessStartInfo("notepad.exe", $"\"{path}\"") { UseShellExecute = true });
+            MessageBox.Show($"已为「{profile.DisplayName}」生成可编辑配置：\n{path}\n\n改完后托盘菜单 → 重新加载快捷键配置 即生效。",
+                "键盘小助手", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex) { Log.Error("customize profile", ex); }
     }
 
     private static void OpenConfigDir()

@@ -37,6 +37,12 @@ public class AppSettings
     /// for this small overlay. Takes effect on next start.</summary>
     public string RenderMode { get; set; } = "software";
 
+    /// <summary>Overlay skin: "dark" (default) or "light".</summary>
+    public string Theme { get; set; } = "dark";
+
+    /// <summary>Accent color for shortcut annotations, hex like "#60CDFF".</summary>
+    public string Accent { get; set; } = "#60CDFF";
+
     /// <summary>Modifier triggers: ctrl / alt / win / shift.</summary>
     public Dictionary<string, TriggerCfg> Triggers { get; set; } = new()
     {

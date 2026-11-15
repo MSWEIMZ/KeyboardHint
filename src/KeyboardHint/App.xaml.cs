@@ -60,7 +60,7 @@ public partial class App : System.Windows.Application
         Log.Info("keyboard hook installed");
 
         _trigger.Start();
-        _tray = new TrayIcon(_trigger, store, settings);
+        _tray = new TrayIcon(_trigger, store, settings, _overlay);
         _overlay.Prewarm(); // 1px invisible show warms hwnd+fonts — first trigger is instant
 
         // Tray apps sit idle most of their life: periodically hand managed

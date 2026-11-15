@@ -60,6 +60,17 @@
                 <Slider x:Name="OpacitySlider" Minimum="50" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"/>
             </DockPanel>
 
+            <TextBlock Text="外观" Style="{StaticResource Sec}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="主题" Style="{StaticResource Lbl}" Margin="0,0,8,0"/>
+                <ComboBox x:Name="ThemeBox" Width="90" Padding="6,2">
+                    <ComboBoxItem Content="深色" Tag="dark"/>
+                    <ComboBoxItem Content="浅色" Tag="light"/>
+                </ComboBox>
+                <TextBlock Text="强调色" Style="{StaticResource Lbl}" Margin="18,0,8,0"/>
+                <ComboBox x:Name="AccentBox" Width="110" Padding="6,2"/>
+            </StackPanel>
+
             <TextBlock Text="显示模式" Style="{StaticResource Sec}"/>
             <CheckBox x:Name="ChkPin" Style="{StaticResource Chk}">
                 <TextBlock Text="钉住模式：松开修饰键后保持显示，再按一次触发键关闭" TextWrapping="Wrap"/>

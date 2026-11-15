@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using KeyboardHint.Core;
 using KeyboardHint.Profiles;
 
@@ -13,13 +14,22 @@ public partial class SettingsWindow : Window
     private readonly AppSettings _settings;
     private readonly ProfileStore _store;
     private readonly ModifierHoldTrigger _trigger;
+    private readonly OverlayWindow _overlay;
 
-    public SettingsWindow(AppSettings settings, ProfileStore store, ModifierHoldTrigger trigger)
+    private static readonly (string Name, string Hex)[] Accents =
+    {
+        ("蓝色", "#60CDFF"), ("紫色", "#B16CE5"), ("绿色", "#6CCB5F"),
+        ("橙色", "#F7630C"), ("粉色", "#E3008C"), ("青色", "#00B7C3"),
+        ("红色", "#E81123"), ("金色", "#FFB900"),
+    };
+
+    public SettingsWindow(AppSettings settings, ProfileStore store, ModifierHoldTrigger trigger, OverlayWindow overlay)
     {
         InitializeComponent();
         _settings = settings;
         _store = store;
         _trigger = trigger;
+        _overlay = overlay;
 
         ChkEnabled.IsChecked = _trigger.Enabled;
         ChkAutostart.IsChecked = StartupManager.IsEnabled();
@@ -31,6 +41,19 @@ public partial class SettingsWindow : Window
         DelaySlider.Value = settings.DelayMs;
         OpacitySlider.Value = settings.Opacity * 100;
         ExcludedBox.Text = string.Join(", ", settings.ExcludedProcesses);
+
+        foreach (ComboBoxItem item in ThemeBox.Items)
+            if (string.Equals(item.Tag as string, settings.Theme, StringComparison.OrdinalIgnoreCase))
+                ThemeBox.SelectedItem = item;
+        if (ThemeBox.SelectedItem == null) ThemeBox.SelectedIndex = 0;
+        foreach (var (name, hex) in Accents)
+        {
+            var item = new ComboBoxItem { Content = name, Tag = hex };
+            AccentBox.Items.Add(item);
+            if (string.Equals(hex, settings.Accent, StringComparison.OrdinalIgnoreCase))
+                AccentBox.SelectedItem = item;
+        }
+        if (AccentBox.SelectedItem == null) AccentBox.SelectedIndex = 0;
 
         DelaySlider.ValueChanged += (_, _) => DelayText.Text = $"{DelaySlider.Value:F0} ms";
         OpacitySlider.ValueChanged += (_, _) => OpacityText.Text = $"{OpacitySlider.Value:F0}%";
@@ -63,7 +86,10 @@ public partial class SettingsWindow : Window
             .Split(',', ';', '，', '；')
             .Select(s => s.Trim().TrimEnd('.')).Where(s => s.EndsWith(".exe") == false && s.Length > 0)
             .Select(s => s.ToLowerInvariant()).ToList();
+        if ((ThemeBox.SelectedItem as ComboBoxItem)?.Tag is string theme) _settings.Theme = theme;
+        if ((AccentBox.SelectedItem as ComboBoxItem)?.Tag is string accent) _settings.Accent = accent;
         _settings.Save();
+        _overlay.ApplyTheme();
         DialogResult = true;
         Close();
     }

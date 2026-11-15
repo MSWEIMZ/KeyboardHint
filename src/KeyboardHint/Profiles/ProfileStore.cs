@@ -39,10 +39,28 @@ public class ProfileStore
         return _fallback;
     }
 
-    /// <summary>User dir wins over bundled dir on id collision.</summary>
+    /// <summary>Load order: embedded resources &lt; exe-dir shortcuts\ (portable/dev)
+    /// &lt; user dir — later sources win on id collision.</summary>
     public static ProfileStore Load()
     {
         var map = new Dictionary<string, ShortcutProfile>(StringComparer.OrdinalIgnoreCase);
+
+        // Embedded profiles keep the single-file exe fully functional.
+        const string resPrefix = "KeyboardHint.shortcuts.";
+        var asm = typeof(ProfileStore).Assembly;
+        foreach (var res in asm.GetManifestResourceNames())
+        {
+            if (!res.StartsWith(resPrefix) || !res.EndsWith(".json")) continue;
+            try
+            {
+                using var s = asm.GetManifestResourceStream(res);
+                var p = JsonSerializer.Deserialize<ShortcutProfile>(s!, AppSettings.JsonOpts());
+                if (p is { Id.Length: > 0 })
+                    map[p.Id] = p;
+            }
+            catch (Exception ex) { Log.Error($"load embedded profile {res}", ex); }
+        }
+
         foreach (var dir in new[]
         {
             Path.Combine(AppSettings.BundledDir, "shortcuts"),
