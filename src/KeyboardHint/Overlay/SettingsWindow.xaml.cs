@@ -12,13 +12,17 @@ public partial class SettingsWindow : Window
 {
     private readonly AppSettings _settings;
     private readonly ProfileStore _store;
+    private readonly ModifierHoldTrigger _trigger;
 
-    public SettingsWindow(AppSettings settings, ProfileStore store)
+    public SettingsWindow(AppSettings settings, ProfileStore store, ModifierHoldTrigger trigger)
     {
         InitializeComponent();
         _settings = settings;
         _store = store;
+        _trigger = trigger;
 
+        ChkEnabled.IsChecked = _trigger.Enabled;
+        ChkAutostart.IsChecked = StartupManager.IsEnabled();
         ChkCtrl.IsChecked = settings.Trigger("ctrl").Enabled;
         ChkAlt.IsChecked = settings.Trigger("alt").Enabled;
         ChkWin.IsChecked = settings.Trigger("win").Enabled;
@@ -46,6 +50,8 @@ public partial class SettingsWindow : Window
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
+        _settings.Enabled = _trigger.Enabled = ChkEnabled.IsChecked == true;
+        StartupManager.Set(ChkAutostart.IsChecked == true);
         SetEnabled("ctrl", ChkCtrl.IsChecked == true);
         SetEnabled("alt", ChkAlt.IsChecked == true);
         SetEnabled("win", ChkWin.IsChecked == true);

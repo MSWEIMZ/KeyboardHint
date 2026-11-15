@@ -21,7 +21,8 @@
 3. **弹出后加按其他修饰键** → 切到组合层（`Ctrl+Shift`、`Win+Shift`、`Ctrl+Alt`……），修饰键高亮；松开回到基础层
 4. 松开触发键 → 键盘隐藏；按住时实际按下的组合键会在键盘上闪烁
 5. **钉住模式**（默认关）：松开后保持显示，再按一次触发键关闭 —— 适合当速查卡片用
-6. 托盘图标右键：**设置窗口**（触发键勾选/延迟/透明度/钉住/排除进程）、触发键快捷勾选、打开配置目录、重新加载快捷键、退出
+6. 托盘图标右键：**设置窗口**（启用/开机自启/触发键勾选/延迟/透明度/钉住/排除进程）、触发键快捷勾选、菜单顶部实时显示当前识别到的应用、打开配置目录、重新加载快捷键、退出
+7. 首次启动会弹气泡提示用法（只弹一次）
 
 ### 防误触发
 
@@ -50,11 +51,17 @@
 | `msoffice-ppt.json` | `powerpnt` | PowerPoint |
 | `browser.json` | `chrome` `msedge` `firefox` `brave` `vivaldi` `opera` `360chrome` `qqbrowser` `2345explorer` | 浏览器 |
 | `vscode.json` | `code` | VS Code |
+| `visualstudio.json` | `devenv` | Visual Studio |
+| `jetbrains.json` | `idea64` `pycharm64` `webstorm64` `goland64` `clion64` `rider64` `datagrip64` `phpstorm64` `studio64` `rubymine64` 等 | JetBrains 全家桶 / Android Studio |
+| `notepadpp.json` | `notepad++` | Notepad++ |
+| `sublime.json` | `sublime_text` | Sublime Text |
 | `explorer.json` | `explorer` | 资源管理器 |
 | `terminal.json` | `windowsterminal` `wt` `warp` | Windows Terminal |
 | `wechat.json` | `wechat` `weixin` | 微信 |
 | `qq.json` | `qq` `qqnt` | QQ |
 | `dingtalk.json` | `dingtalk` `dingtalklite` | 钉钉 |
+| `wxwork.json` | `wxwork` `wework` | 企业微信 |
+| `feishu.json` | `feishu` `lark` | 飞书 |
 | `jianying.json` | `jianyingpro` `capcut` `vegaspro` | 剪映 / CapCut |
 | `photoshop.json` | `photoshop` | Photoshop |
 | `obsidian.json` | `obsidian` | Obsidian |
@@ -150,6 +157,8 @@ dotnet publish src\KeyboardHint\KeyboardHint.csproj -c Release -o publish
 
 - 支持的触发键：Ctrl / Alt / Win / Shift（后两者经由 `triggers` 配置开关）；Shift 长按 8 秒会触发系统粘滞键提示，属 Windows 行为
 - 不能点击键位直接触发快捷键（二期：overlay 需切换 `IsHitTestVisible` + `SendInput`）
+- 序列式快捷键（Ctrl+K,C 先按组合再按字母）暂无法表达 —— schema 是修饰键层模型；Roadmap：chord 前缀层
+- Roadmap：快捷键浏览/搜索窗口（列出当前应用全部层，可搜索可练习）
 - Office/WPS 的 `alt` 层 KeyTips 字母按功能区惯例整理，个别版本可能有出入 —— 应用自身按 Alt 时也会显示原生提示，可对照
 - 杀软可能因键盘钩子误报 —— 代码开源可自证；如需分发建议做代码签名
 - 未签名 exe 首次运行 Windows SmartScreen 会提示，点"仍要运行"

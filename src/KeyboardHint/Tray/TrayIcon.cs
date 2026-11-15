@@ -58,13 +58,29 @@ public sealed class TrayIcon : IDisposable
             settings.Save();
         };
 
+        var statusItem = new ToolStripMenuItem("当前应用：—") { Enabled = false };
+
         var menu = new ContextMenuStrip();
+        menu.Opening += (_, _) =>
+        {
+            try
+            {
+                var ctx = ForegroundApp.Capture();
+                var p = store.Resolve(ctx.ProcessName);
+                statusItem.Text = string.IsNullOrEmpty(ctx.ProcessName)
+                    ? "当前应用：—"
+                    : $"当前应用：{ctx.ProcessName} → {p.DisplayName}";
+            }
+            catch { statusItem.Text = "当前应用：—"; }
+        };
+        menu.Items.Add(statusItem);
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_enabledItem);
         menu.Items.Add(triggersMenu);
         menu.Items.Add(pinItem);
         menu.Items.Add(new ToolStripMenuItem("设置…", null, (_, _) =>
         {
-            var w = new KeyboardHint.Overlay.SettingsWindow(settings, store);
+            var w = new KeyboardHint.Overlay.SettingsWindow(settings, store, trigger);
             w.ShowDialog();
         }));
         menu.Items.Add(new ToolStripSeparator());
@@ -76,6 +92,9 @@ public sealed class TrayIcon : IDisposable
             MessageBox.Show("快捷键配置已重新加载。", "键盘小助手");
         }));
         menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(new ToolStripMenuItem("关于", null, (_, _) => MessageBox.Show(
+            "键盘小助手 v1.1\n\n按住 Ctrl / Alt / Win 显示当前应用的快捷键键盘。\n数据目录：%LOCALAPPDATA%\\KeyboardHint\n日志同目录可查。",
+            "关于 键盘小助手", MessageBoxButtons.OK, MessageBoxIcon.Information)));
         menu.Items.Add(new ToolStripMenuItem("退出", null, (_, _) => System.Windows.Application.Current.Shutdown()));
 
         _icon = new NotifyIcon
@@ -85,6 +104,16 @@ public sealed class TrayIcon : IDisposable
             ContextMenuStrip = menu,
             Visible = true
         };
+
+        // First-run onboarding: without a hint nobody knows the gesture exists.
+        var marker = Path.Combine(Log.UserDir, ".welcomed");
+        if (!File.Exists(marker))
+        {
+            try { File.WriteAllText(marker, ""); } catch { }
+            _icon.ShowBalloonTip(8000, "键盘小助手已启动",
+                "在任意应用中按住 Ctrl、Alt 或 Win 键约半秒，\n屏幕底部会弹出当前应用的快捷键键盘。\n右键托盘图标可设置触发键和延迟。",
+                ToolTipIcon.Info);
+        }
     }
 
     private static void OpenConfigDir()

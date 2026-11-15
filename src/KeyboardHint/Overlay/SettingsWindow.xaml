@@ -32,6 +32,12 @@
             <TextBlock Text="键盘小助手" Style="{StaticResource Title}"/>
             <TextBlock Text="按住修饰键，屏幕底部弹出当前应用的快捷键键盘。" FontSize="12" Foreground="#FF6B6B72" Margin="0,4,0,0" TextWrapping="Wrap"/>
 
+            <TextBlock Text="常规" Style="{StaticResource Sec}"/>
+            <StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="ChkEnabled" Content="启用快捷键提示" Style="{StaticResource Chk}"/>
+                <CheckBox x:Name="ChkAutostart" Content="开机自动启动" Style="{StaticResource Chk}"/>
+            </StackPanel>
+
             <TextBlock Text="触发键（按住显示快捷键键盘）" Style="{StaticResource Sec}"/>
             <StackPanel Orientation="Horizontal">
                 <CheckBox x:Name="ChkCtrl" Content="Ctrl" Style="{StaticResource Chk}"/>

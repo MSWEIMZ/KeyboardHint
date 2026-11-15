@@ -1,0 +1,22 @@
+{
+  "id": "wxwork",
+  "displayName": "企业微信",
+  "processes": ["wxwork", "wework"],
+  "layers": {
+    "ctrl": {
+      "F": "搜索",
+      "N": "新建聊天",
+      "W": "关闭窗口",
+      "Tab": "切换会话",
+      "OemComma": "设置"
+    },
+    "ctrl+alt": {
+      "A": "截图"
+    },
+    "alt": {
+      "A": "截图",
+      "Space": "窗口菜单",
+      "F4": "关闭窗口"
+    }
+  }
+}
