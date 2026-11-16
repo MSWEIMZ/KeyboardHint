@@ -5,7 +5,9 @@
   "layers": {
     "ctrl+alt": {
       "Home": "连接栏",
-      "End": "安全选项"
+      "End": "安全选项",
+      "OemMinus": "窗口快照",
+      "OemPlus": "屏幕快照"
     },
     "alt": {
       "PgUp": "向右切换",
