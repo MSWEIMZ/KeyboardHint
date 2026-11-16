@@ -9,7 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>KeyboardHint</RootNamespace>
     <AssemblyName>KeyboardHint</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>1.2.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <AssemblyTitle>键盘小助手</AssemblyTitle>
