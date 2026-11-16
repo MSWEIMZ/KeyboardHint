@@ -8,6 +8,7 @@ using KeyboardHint.Profiles;
 using Microsoft.Win32;
 using Button = System.Windows.Controls.Button;
 using Color = System.Windows.Media.Color;
+using FontFamily = System.Windows.Media.FontFamily;
 using ComboBox = System.Windows.Controls.ComboBox;
 using ComboBoxItem = System.Windows.Controls.ComboBoxItem;
 using MessageBox = System.Windows.MessageBox;
@@ -91,6 +92,11 @@ public partial class ShortcutEditorWindow : Window
         if (AppBox.SelectedIndex < 0) AppBox.SelectedIndex = 0;
     }
 
+    private void OnMin(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void OnMax(object sender, RoutedEventArgs e)
+        => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void OnClose(object sender, RoutedEventArgs e) => Close();
+
     private void RefillAppBox()
     {
         _loading = true;
@@ -166,8 +172,10 @@ public partial class ShortcutEditorWindow : Window
             key.Items.Add(new KeyItem { Id = id, Label = label });
         key.SelectedItem = key.Items.Cast<KeyItem>().FirstOrDefault(i => i.Id == keyId) ?? key.Items[0];
 
-        var descBox = new TextBox { MinWidth = 180, Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(6, 3, 6, 3), Text = desc, FontSize = 12 };
-        var del = new Button { Content = "×", Width = 26, Padding = new Thickness(0), Foreground = new SolidColorBrush(Color.FromRgb(0xC4, 0x2B, 0x1C)) };
+        var descBox = new TextBox { MinWidth = 180, Margin = new Thickness(0, 0, 8, 0), Text = desc, FontSize = 12 };
+        var del = new Button { Content = "", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 10 };
+        if (TryFindResource("IconButton") is Style iconStyle) del.Style = iconStyle;
+        del.ToolTip = "删除该行";
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
         row.Children.Add(key);

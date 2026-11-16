@@ -56,6 +56,29 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // "--settings" opens the settings panel standalone (desktop-shortcut
+        // friendly). Runs before the single-instance mutex like --editor.
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--settings")
+        {
+            Log.Init();
+            DispatcherUnhandledException += (_, args) =>
+            {
+                Log.Error("unhandled UI exception", args.Exception);
+                args.Handled = true;
+            };
+            try
+            {
+                var s = AppSettings.Load();
+                var st = ProfileStore.Load();
+                var ov = new OverlayWindow(s);
+                var tr = new ModifierHoldTrigger(s, st, ov);
+                new SettingsWindow(s, st, tr, ov).ShowDialog();
+            }
+            catch (Exception ex) { Log.Error("settings mode", ex); }
+            Shutdown();
+            return;
+        }
+
         _mutex = new Mutex(true, @"Local\KeyboardHint_Once", out bool created);
         if (!created)
         {

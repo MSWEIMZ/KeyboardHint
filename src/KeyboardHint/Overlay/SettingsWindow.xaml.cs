@@ -61,6 +61,8 @@ public partial class SettingsWindow : Window
         OpacityText.Text = $"{settings.Opacity * 100:F0}%";
     }
 
+    private void OnClose(object sender, RoutedEventArgs e) { DialogResult = false; Close(); }
+
     private void OnOpenDir(object sender, RoutedEventArgs e)
     {
         try
