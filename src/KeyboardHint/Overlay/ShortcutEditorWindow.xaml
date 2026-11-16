@@ -1,0 +1,73 @@
+<Window x:Class="KeyboardHint.Overlay.ShortcutEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="键盘小助手 · 快捷键编辑器" Width="560" Height="620"
+        WindowStartupLocation="CenterScreen" ResizeMode="CanResizeWithGrip"
+        MinWidth="480" MinHeight="420" Topmost="True" Background="#FAFAFB">
+    <Window.Resources>
+        <Style x:Key="Title" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#FF1B1B1F"/>
+        </Style>
+        <Style x:Key="Sec" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#FF6B6B72"/>
+            <Setter Property="Margin" Value="0,12,0,6"/>
+        </Style>
+        <Style x:Key="Lbl" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#FF1B1B1F"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="快捷键编辑器" Style="{StaticResource Title}"/>
+            <TextBlock Text="可视化编辑任意应用的快捷键标注，无需手写 JSON。" FontSize="12"
+                       Foreground="#FF6B6B72" Margin="0,4,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="应用" Style="{StaticResource Sec}"/>
+            <DockPanel>
+                <Button Content="导入…" Padding="12,5" Margin="8,0,0,0" DockPanel.Dock="Right"
+                        Click="OnImport" ToolTip="从 JSON 文件导入一份快捷键配置"/>
+                <Button Content="＋ 新建应用" Padding="12,5" Margin="8,0,0,0" DockPanel.Dock="Right"
+                        Click="OnNewApp" ToolTip="为一个还没有配置的应用创建快捷键配置"/>
+                <ComboBox x:Name="AppBox" Padding="6,3" SelectionChanged="OnAppChanged"/>
+            </DockPanel>
+            <TextBlock x:Name="ProcText" FontSize="11" Foreground="#FF8B8B92" Margin="0,4,0,0" TextWrapping="Wrap"/>
+
+            <TextBlock Text="修饰层（按住哪些键时显示）" Style="{StaticResource Sec}"/>
+            <ComboBox x:Name="LayerBox" Padding="6,3" SelectionChanged="OnLayerChanged"/>
+        </StackPanel>
+
+        <DockPanel Grid.Row="2" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,6">
+                <Button Content="＋ 添加一行" Padding="12,5" Click="OnAddRow"/>
+                <TextBlock Text="  选按键，填功能说明，× 删除该行" Style="{StaticResource Lbl}"
+                           Foreground="#FF8B8B92"/>
+            </StackPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="RowsPanel"/>
+            </ScrollViewer>
+        </DockPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <TextBlock x:Name="HintText" FontSize="11" Foreground="#FF8B8B92"
+                       VerticalAlignment="Center" Margin="0,0,14,0" TextWrapping="Wrap" MaxWidth="260"/>
+            <Button Content="取消" Padding="14,6" Margin="0,0,10,0" Click="OnCancel"/>
+            <Button Content="保存" Padding="18,6" Click="OnSave"
+                    Background="#FF0067C0" Foreground="White" BorderThickness="0"/>
+        </StackPanel>
+    </Grid>
+</Window>

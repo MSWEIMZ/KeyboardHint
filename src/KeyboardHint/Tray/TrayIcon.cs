@@ -85,7 +85,15 @@ public sealed class TrayIcon : IDisposable
             w.ShowDialog();
         }));
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("自定义当前应用快捷键…", null, (_, _) => CustomizeCurrentApp(store)));
+        menu.Items.Add(new ToolStripMenuItem("快捷键编辑器…", null, (_, _) =>
+        {
+            string? proc = null;
+            try { proc = ForegroundApp.Capture().ProcessName; } catch { }
+            var w = new KeyboardHint.Overlay.ShortcutEditorWindow(store,
+                () => store.ReloadFrom(ProfileStore.Load()), proc);
+            w.ShowDialog();
+        }));
+        menu.Items.Add(new ToolStripMenuItem("自定义当前应用快捷键（JSON）…", null, (_, _) => CustomizeCurrentApp(store)));
         menu.Items.Add(new ToolStripMenuItem("打开配置/快捷键目录", null, (_, _) => OpenConfigDir()));
         menu.Items.Add(new ToolStripMenuItem("重新加载快捷键配置", null, (_, _) =>
         {

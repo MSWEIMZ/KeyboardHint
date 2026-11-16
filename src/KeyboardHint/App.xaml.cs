@@ -32,6 +32,30 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // Editor mode: "KeyboardHint --editor" opens the shortcut editor
+        // standalone (useful for a desktop shortcut / testing) — runs before
+        // the single-instance mutex so it works while the tray app is alive.
+        // Save still writes to the user dir; use tray "重新加载" to pick it up.
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--editor")
+        {
+            Log.Init();
+            DispatcherUnhandledException += (_, args) =>
+            {
+                Log.Error("unhandled UI exception", args.Exception);
+                args.Handled = true;
+            };
+            try
+            {
+                var editorStore = ProfileStore.Load();
+                string? proc = null;
+                try { proc = ForegroundApp.Capture().ProcessName; } catch { }
+                new ShortcutEditorWindow(editorStore, () => { }, proc).ShowDialog();
+            }
+            catch (Exception ex) { Log.Error("editor mode", ex); }
+            Shutdown();
+            return;
+        }
+
         _mutex = new Mutex(true, @"Local\KeyboardHint_Once", out bool created);
         if (!created)
         {
