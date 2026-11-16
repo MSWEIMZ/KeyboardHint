@@ -5,114 +5,37 @@ using System.IO;
 using System.Windows.Forms;
 using KeyboardHint.Core;
 using KeyboardHint.Profiles;
+using WpfContextMenu = System.Windows.Controls.ContextMenu;
+using WpfMenuItem = System.Windows.Controls.MenuItem;
+using WpfSeparator = System.Windows.Controls.Separator;
 
 namespace KeyboardHint.Tray;
 
 public sealed class TrayIcon : IDisposable
 {
     private readonly NotifyIcon _icon;
-    private readonly ToolStripMenuItem _enabledItem;
+    private readonly ModifierHoldTrigger _trigger;
+    private readonly ProfileStore _store;
+    private readonly AppSettings _settings;
+    private readonly KeyboardHint.Overlay.OverlayWindow _overlay;
 
     public TrayIcon(ModifierHoldTrigger trigger, ProfileStore store, AppSettings settings,
                     KeyboardHint.Overlay.OverlayWindow overlay)
     {
-        _enabledItem = new ToolStripMenuItem("已启用（按住修饰键显示快捷键）")
-        {
-            Checked = trigger.Enabled,
-            CheckOnClick = true
-        };
-        _enabledItem.CheckedChanged += (_, _) => trigger.Enabled = _enabledItem.Checked;
-
-        var triggersMenu = new ToolStripMenuItem("触发键");
-        var modNames = new (string Id, string Label)[]
-        {
-            ("ctrl", "Ctrl"), ("alt", "Alt"), ("win", "Win"), ("shift", "Shift")
-        };
-        foreach (var (id, label) in modNames)
-        {
-            var item = new ToolStripMenuItem(label)
-            {
-                Checked = settings.Trigger(id).Enabled,
-                CheckOnClick = true
-            };
-            item.CheckedChanged += (_, _) =>
-            {
-                settings.Triggers[id] = new TriggerCfg
-                {
-                    Enabled = item.Checked,
-                    DelayMs = settings.Trigger(id).DelayMs,
-                    SuppressRelease = settings.Trigger(id).SuppressRelease
-                };
-                settings.Save();
-            };
-            triggersMenu.DropDownItems.Add(item);
-        }
-
-        var pinItem = new ToolStripMenuItem("钉住模式（松开后保持显示，再按一次关闭）")
-        {
-            Checked = settings.StayOnRelease,
-            CheckOnClick = true
-        };
-        pinItem.CheckedChanged += (_, _) =>
-        {
-            settings.StayOnRelease = pinItem.Checked;
-            settings.Save();
-        };
-
-        var statusItem = new ToolStripMenuItem("当前应用：—") { Enabled = false };
-
-        var menu = new ContextMenuStrip();
-        menu.Opening += (_, _) =>
-        {
-            try
-            {
-                var ctx = ForegroundApp.Capture();
-                var p = store.Resolve(ctx.ProcessName);
-                statusItem.Text = string.IsNullOrEmpty(ctx.ProcessName)
-                    ? "当前应用：—"
-                    : $"当前应用：{ctx.ProcessName} → {p.DisplayName}";
-            }
-            catch { statusItem.Text = "当前应用：—"; }
-        };
-        menu.Items.Add(statusItem);
-        menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(_enabledItem);
-        menu.Items.Add(triggersMenu);
-        menu.Items.Add(pinItem);
-        menu.Items.Add(new ToolStripMenuItem("设置…", null, (_, _) =>
-        {
-            var w = new KeyboardHint.Overlay.SettingsWindow(settings, store, trigger, overlay);
-            w.ShowDialog();
-        }));
-        menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("快捷键编辑器…", null, (_, _) =>
-        {
-            string? proc = null;
-            try { proc = ForegroundApp.Capture().ProcessName; } catch { }
-            var w = new KeyboardHint.Overlay.ShortcutEditorWindow(store,
-                () => store.ReloadFrom(ProfileStore.Load()), proc);
-            w.ShowDialog();
-        }));
-        menu.Items.Add(new ToolStripMenuItem("自定义当前应用快捷键（JSON）…", null, (_, _) => CustomizeCurrentApp(store)));
-        menu.Items.Add(new ToolStripMenuItem("打开配置/快捷键目录", null, (_, _) => OpenConfigDir()));
-        menu.Items.Add(new ToolStripMenuItem("重新加载快捷键配置", null, (_, _) =>
-        {
-            var fresh = ProfileStore.Load();
-            store.ReloadFrom(fresh);
-            MessageBox.Show("快捷键配置已重新加载。", "键盘小助手");
-        }));
-        menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("关于", null, (_, _) => MessageBox.Show(
-            "键盘小助手 v1.1\n\n按住 Ctrl / Alt / Win 显示当前应用的快捷键键盘。\n数据目录：%LOCALAPPDATA%\\KeyboardHint\n日志同目录可查。",
-            "关于 键盘小助手", MessageBoxButtons.OK, MessageBoxIcon.Information)));
-        menu.Items.Add(new ToolStripMenuItem("退出", null, (_, _) => System.Windows.Application.Current.Shutdown()));
+        _trigger = trigger;
+        _store = store;
+        _settings = settings;
+        _overlay = overlay;
 
         _icon = new NotifyIcon
         {
             Text = "键盘小助手 — 按住 Ctrl/Alt/Win 显示快捷键",
             Icon = MakeIcon(),
-            ContextMenuStrip = menu,
             Visible = true
+        };
+        _icon.MouseUp += (_, e) =>
+        {
+            if (e.Button is MouseButtons.Right or MouseButtons.Left) ShowTrayMenu();
         };
 
         // First-run onboarding: without a hint nobody knows the gesture exists.
@@ -124,6 +47,110 @@ public sealed class TrayIcon : IDisposable
                 "在任意应用中按住 Ctrl、Alt 或 Win 键约半秒，\n屏幕底部会弹出当前应用的快捷键键盘。\n右键托盘图标可设置触发键和延迟。",
                 ToolTipIcon.Info);
         }
+    }
+
+    /// <summary>Win11-style WPF context menu (Fluent styles from Themes/Fluent.xaml).
+    /// Rebuilt on every open so check states and the foreground-app header are live.</summary>
+    internal void ShowTrayMenu(System.Windows.Point? at = null)
+    {
+        var menu = new WpfContextMenu();
+
+        // ---- status header ----
+        var status = new WpfMenuItem { IsEnabled = false, FontWeight = System.Windows.FontWeights.SemiBold };
+        try
+        {
+            var ctx = ForegroundApp.Capture();
+            var p = _store.Resolve(ctx.ProcessName);
+            status.Header = string.IsNullOrEmpty(ctx.ProcessName)
+                ? "当前应用：—"
+                : $"当前应用：{ctx.ProcessName} → {p.DisplayName}";
+        }
+        catch { status.Header = "当前应用：—"; }
+        menu.Items.Add(status);
+        menu.Items.Add(new WpfSeparator());
+
+        // ---- toggles ----
+        menu.Items.Add(Toggle("启用快捷键提示", _trigger.Enabled, on => _trigger.Enabled = on));
+
+        var trig = new WpfMenuItem { Header = "触发键" };
+        foreach (var (id, label) in new[] { ("ctrl", "Ctrl"), ("alt", "Alt"), ("win", "Win"), ("shift", "Shift") })
+        {
+            trig.Items.Add(Toggle(label, _settings.Trigger(id).Enabled, on =>
+            {
+                var c = _settings.Trigger(id);
+                _settings.Triggers[id] = new TriggerCfg { Enabled = on, DelayMs = c.DelayMs, SuppressRelease = c.SuppressRelease };
+                _settings.Save();
+            }));
+        }
+        menu.Items.Add(trig);
+
+        menu.Items.Add(Toggle("钉住模式（松开后保持显示）", _settings.StayOnRelease, on =>
+        {
+            _settings.StayOnRelease = on;
+            _settings.Save();
+        }));
+        menu.Items.Add(new WpfSeparator());
+
+        // ---- actions ----
+        menu.Items.Add(Item("快捷键编辑器…", () =>
+        {
+            string? proc = null;
+            try { proc = ForegroundApp.Capture().ProcessName; } catch { }
+            new KeyboardHint.Overlay.ShortcutEditorWindow(_store,
+                () => _store.ReloadFrom(ProfileStore.Load()), proc).ShowDialog();
+        }));
+        menu.Items.Add(Item("设置…", () =>
+            new KeyboardHint.Overlay.SettingsWindow(_settings, _store, _trigger, _overlay).ShowDialog()));
+        menu.Items.Add(new WpfSeparator());
+        menu.Items.Add(Item("自定义当前应用快捷键（JSON）…", () => CustomizeCurrentApp(_store)));
+        menu.Items.Add(Item("打开配置/快捷键目录", OpenConfigDir));
+        menu.Items.Add(Item("重新加载快捷键配置", () =>
+        {
+            _store.ReloadFrom(ProfileStore.Load());
+            System.Windows.MessageBox.Show("快捷键配置已重新加载。", "键盘小助手");
+        }));
+        menu.Items.Add(new WpfSeparator());
+        menu.Items.Add(Item("关于", () => System.Windows.MessageBox.Show(
+            "键盘小助手 v1.2\n\n按住 Ctrl / Alt / Win 显示当前应用的快捷键键盘。\n数据目录：%LOCALAPPDATA%\\KeyboardHint\n日志同目录可查。",
+            "关于 键盘小助手", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information)));
+        menu.Items.Add(Item("退出", () => System.Windows.Application.Current.Shutdown()));
+
+        if (at.HasValue)
+        {
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.AbsolutePoint;
+            menu.PlacementRectangle = new System.Windows.Rect(at.Value, System.Windows.Size.Empty);
+        }
+        else
+        {
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+        }
+        menu.IsOpen = true;
+    }
+
+    private static WpfMenuItem Item(string header, Action action)
+    {
+        var mi = new WpfMenuItem { Header = header };
+        mi.Click += (_, _) =>
+        {
+            try { action(); } catch (Exception ex) { Log.Error("tray menu action", ex); }
+        };
+        return mi;
+    }
+
+    private static WpfMenuItem Toggle(string header, bool isChecked, Action<bool> set)
+    {
+        var mi = new WpfMenuItem
+        {
+            Header = header,
+            IsCheckable = true,
+            IsChecked = isChecked,
+            StaysOpenOnClick = true
+        };
+        mi.Click += (_, _) =>
+        {
+            try { set(mi.IsChecked); } catch (Exception ex) { Log.Error("tray toggle", ex); }
+        };
+        return mi;
     }
 
     /// <summary>Export the current foreground app's profile to the user dir
@@ -140,8 +167,6 @@ public sealed class TrayIcon : IDisposable
 
             ShortcutProfile toWrite = profile;
             var id = profile.Id;
-            // Unknown app → start a NEW profile pre-matched to this process
-            // (editing default.json's copy wouldn't match anything useful).
             if (id == "default" && !string.IsNullOrEmpty(ctx.ProcessName))
             {
                 id = ctx.ProcessName.ToLowerInvariant();
@@ -158,8 +183,8 @@ public sealed class TrayIcon : IDisposable
                 File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(toWrite,
                     new System.Text.Json.JsonSerializerOptions(AppSettings.JsonOpts()) { WriteIndented = true }));
             Process.Start(new ProcessStartInfo("notepad.exe", $"\"{path}\"") { UseShellExecute = true });
-            MessageBox.Show($"已为「{profile.DisplayName}」生成可编辑配置：\n{path}\n\n改完后托盘菜单 → 重新加载快捷键配置 即生效。",
-                "键盘小助手", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            System.Windows.MessageBox.Show($"已为「{profile.DisplayName}」生成可编辑配置：\n{path}\n\n改完后托盘菜单 → 重新加载快捷键配置 即生效。",
+                "键盘小助手", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         catch (Exception ex) { Log.Error("customize profile", ex); }
     }

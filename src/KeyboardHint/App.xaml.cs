@@ -79,6 +79,30 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // "--menu" previews the tray flyout near screen center (debug/screenshot).
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--menu")
+        {
+            Log.Init();
+            DispatcherUnhandledException += (_, args) =>
+            {
+                Log.Error("unhandled UI exception", args.Exception);
+                args.Handled = true;
+            };
+            try
+            {
+                var s = AppSettings.Load();
+                var st = ProfileStore.Load();
+                var ov = new OverlayWindow(s);
+                var tr = new ModifierHoldTrigger(s, st, ov);
+                var ti = new TrayIcon(tr, st, s, ov);
+                ti.ShowTrayMenu(new System.Windows.Point(
+                    SystemParameters.PrimaryScreenWidth / 2 - 140,
+                    SystemParameters.PrimaryScreenHeight / 2 - 260));
+            }
+            catch (Exception ex) { Log.Error("menu mode", ex); }
+            return; // keep process alive so the flyout stays open for inspection
+        }
+
         _mutex = new Mutex(true, @"Local\KeyboardHint_Once", out bool created);
         if (!created)
         {
