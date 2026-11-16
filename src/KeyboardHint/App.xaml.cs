@@ -23,6 +23,15 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        // Probe mode: parent spawns us as "KeyboardHint --render-probe <outfile>"
+        // to verify hardware rendering actually produces pixels. Runs before
+        // the single-instance mutex so it works while the parent is alive.
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--render-probe")
+        {
+            RunRenderProbe(e.Args.Length > 1 ? e.Args[1] : "");
+            return;
+        }
+
         _mutex = new Mutex(true, @"Local\KeyboardHint_Once", out bool created);
         if (!created)
         {
@@ -46,10 +55,24 @@ public partial class App : System.Windows.Application
         };
 
         var settings = AppSettings.Load();
-        // Broken GPU pipelines (driver/D3D state) leave every WPF window
-        // composited blank; software rendering is deterministic for a small
-        // overlay. Must be set before the first window is shown.
-        if (!string.Equals(settings.RenderMode, "hardware", StringComparison.OrdinalIgnoreCase))
+        // renderMode=hardware is opt-in, but a broken GPU/D3D pipeline makes it
+        // worse than useless (every window renders blank). Probe it for real:
+        // spawn ourselves as a tiny red window and read the pixels back; blank
+        // → persist "software" so we never probe again. Probing costs ~0.5s
+        // and only runs for users who explicitly opted into hardware.
+        bool hardware = string.Equals(settings.RenderMode, "hardware", StringComparison.OrdinalIgnoreCase);
+        if (hardware)
+        {
+            var verdict = ProbeHardwareRender();
+            Log.Info($"hardware render probe: {verdict}");
+            if (verdict != "ok")
+            {
+                settings.RenderMode = "software";
+                settings.Save();
+                hardware = false;
+            }
+        }
+        if (!hardware)
             System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         var store = ProfileStore.Load();
         _overlay = new OverlayWindow(settings);
@@ -85,6 +108,81 @@ public partial class App : System.Windows.Application
             GC.Collect(2, GCCollectionMode.Optimized, false);
         };
         memTrim.Start();
+    }
+
+    /// <summary>Spawn a copy of ourselves in probe mode; it shows a small red
+    /// window (default/hardware pipeline — ProcessRenderMode is only set in
+    /// the parent when needed) and writes "ok"/"blank" to a result file.</summary>
+    private static string ProbeHardwareRender()
+    {
+        var outFile = Path.Combine(Path.GetTempPath(), $"kh-rp-{Guid.NewGuid():N}.txt");
+        try
+        {
+            var exe = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(exe)) return "noexe";
+            var psi = new System.Diagnostics.ProcessStartInfo(exe, $"--render-probe \"{outFile}\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var p = System.Diagnostics.Process.Start(psi);
+            if (p == null) return "nostart";
+            if (!p.WaitForExit(8000)) { try { p.Kill(); } catch { } return "timeout"; }
+            return File.Exists(outFile) ? File.ReadAllText(outFile).Trim() : "nofile";
+        }
+        catch (Exception ex) { return $"error {ex.GetType().Name}"; }
+        finally { try { File.Delete(outFile); } catch { } }
+    }
+
+    /// <summary>Probe instance body: paint a small opaque red window on screen,
+    /// give DWM a moment to composite, then read the pixels back through GDI
+    /// (the exact path that was blank when the GPU pipeline was broken).</summary>
+    private void RunRenderProbe(string outFile)
+    {
+        string verdict = "blank";
+        try
+        {
+            var w = new Window
+            {
+                Width = 8,
+                Height = 8,
+                WindowStyle = WindowStyle.None,
+                ShowInTaskbar = false,
+                ShowActivated = false,
+                Topmost = true,
+                ResizeMode = ResizeMode.NoResize,
+                Background = System.Windows.Media.Brushes.Red,
+                Left = SystemParameters.WorkArea.Right - 16,
+                Top = SystemParameters.WorkArea.Bottom - 16
+            };
+            w.Show();
+            for (int i = 0; i < 2 && verdict == "blank"; i++)
+            {
+                // Pump the dispatcher so the render thread gets its frame out.
+                Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+                System.Threading.Thread.Sleep(400);
+
+                var hwnd = new System.Windows.Interop.WindowInteropHelper(w).Handle;
+                if (hwnd == IntPtr.Zero || !Win32.GetWindowRect(hwnd, out var r)) continue;
+                int wpx = r.Right - r.Left, hpx = r.Bottom - r.Top;
+                if (wpx <= 0 || hpx <= 0) continue;
+                using var bmp = new System.Drawing.Bitmap(wpx, hpx);
+                using (var g = System.Drawing.Graphics.FromImage(bmp))
+                    g.CopyFromScreen(r.Left, r.Top, 0, 0, new System.Drawing.Size(wpx, hpx));
+                int red = 0;
+                for (int x = 0; x < wpx; x++)
+                    for (int y = 0; y < hpx; y++)
+                    {
+                        var c = bmp.GetPixel(x, y);
+                        if (c.R > 200 && c.G < 90 && c.B < 90) red++;
+                    }
+                if (red * 4 >= wpx * hpx) verdict = "ok"; // ≥25% red = real pixels
+            }
+            w.Close();
+        }
+        catch { verdict = "error"; }
+        try { if (outFile.Length > 0) File.WriteAllText(outFile, verdict); } catch { }
+        Shutdown();
     }
 
     protected override void OnExit(ExitEventArgs e)
