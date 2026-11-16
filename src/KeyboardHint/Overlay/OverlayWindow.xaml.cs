@@ -51,6 +51,10 @@ public partial class OverlayWindow : Window
         ApplyTheme(); // brushes must exist before BuildKeyboard uses them
         System.Windows.Documents.TextElement.SetFontFamily(RootBorder, UiFont);
         RootBorder.RenderTransform = _slide;
+        // Cache the rendered panel as a bitmap: the fade/slide animation then
+        // transforms one bitmap instead of re-rasterizing ~100 key elements
+        // every frame — critical under software rendering.
+        RootBorder.CacheMode = new BitmapCache { EnableClearType = true };
         BuildKeyboard();
     }
 
@@ -266,7 +270,10 @@ public partial class OverlayWindow : Window
         SetLayer(profile, layerName, layer);
 
         Width = double.NaN; Height = double.NaN; // in case Prewarm's 1px size is still on
-        KeyboardPanel.LayoutTransform = Transform.Identity;
+        // Re-assigning an already-identity transform re-invalidates the whole
+        // keyboard layout (~100 elements) — only reset a real transform.
+        if (KeyboardPanel.LayoutTransform?.Value.IsIdentity == false)
+            KeyboardPanel.LayoutTransform = Transform.Identity;
         Visibility = Visibility.Visible;
         IsShowing = true;
         // Once we've rendered at least once we know the size: position

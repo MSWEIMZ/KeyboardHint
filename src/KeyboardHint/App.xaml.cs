@@ -74,15 +74,15 @@ public partial class App : System.Windows.Application
         _tray = new TrayIcon(_trigger, store, settings, _overlay);
         _overlay.Prewarm(); // 1px invisible show warms hwnd+fonts — first trigger is instant
 
-        // Tray apps sit idle most of their life: periodically hand managed
-        // garbage and trimmed pages back to the OS instead of holding a
-        // working set sized for the busiest moment.
+        // Tray apps sit idle most of their life: periodically compact the
+        // managed heap so the process doesn't hold peak-time memory forever.
+        // NOTE: no EmptyWorkingSet here — evicting code/render pages makes the
+        // next Ctrl press pay hard page faults (perceived as lag).
         var memTrim = new DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
         memTrim.Tick += (_, _) =>
         {
             if (_trigger.IsShowing()) return;
             GC.Collect(2, GCCollectionMode.Optimized, false);
-            Win32.EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
         };
         memTrim.Start();
     }
